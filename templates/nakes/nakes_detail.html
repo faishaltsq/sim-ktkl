@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}{{ nakes.nama }} - SIM KTKL{% endblock %}
+{% block page_title %}Detail Tenaga Kesehatan{% endblock %}
+{% block page_title_mobile %}Detail Nakes{% endblock %}
+
+{% block content %}
+<div class="row g-3">
+    <div class="col-12 col-lg-8">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                <h6 class="mb-0 small fw-bold">{{ nakes.nama }}</h6>
+                <div>
+                    <a href="{% url 'nakes:update' nakes.pk %}" class="btn btn-sm btn-outline-primary">Edit</a>
+                    <a href="{% url 'nakes:delete' nakes.pk %}" class="btn btn-sm btn-outline-danger">Hapus</a>
+                </div>
+            </div>
+            <div class="card-body p-2 p-md-3">
+                <div class="d-none d-md-block">
+                    <table class="table table-borderless mb-0">
+                        <tr><th width="200">Profesi</th><td>{{ nakes.get_profesi_display }}</td></tr>
+                        <tr><th>Unit Kerja</th><td>{{ nakes.unit_kerja }}</td></tr>
+                        <tr><th>Nomor STR</th><td><code>{{ nakes.no_str }}</code></td></tr>
+                        <tr>
+                            <th>Masa Berlaku STR</th>
+                            <td>
+                                {{ nakes.masa_berlaku_str }}
+                                {% if nakes.str_sisa_hari < 0 %}
+                                    <span class="badge bg-danger ms-2">Kedaluwarsa</span>
+                                {% elif nakes.str_sisa_hari <= 180 %}
+                                    <span class="badge bg-warning text-dark ms-2">{{ nakes.str_sisa_hari }} hari lagi</span>
+                                {% else %}
+                                    <span class="badge bg-success ms-2">Aman</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr><th>Nomor SIP</th><td><code>{{ nakes.no_sip }}</code></td></tr>
+                        <tr>
+                            <th>Masa Berlaku SIP</th>
+                            <td>
+                                {{ nakes.masa_berlaku_sip }}
+                                {% if nakes.sip_sisa_hari < 0 %}
+                                    <span class="badge bg-danger ms-2">Kedaluwarsa</span>
+                                {% elif nakes.sip_sisa_hari <= 180 %}
+                                    <span class="badge bg-warning text-dark ms-2">{{ nakes.sip_sisa_hari }} hari lagi</span>
+                                {% else %}
+                                    <span class="badge bg-success ms-2">Aman</span>
+                                {% endif %}
+                            </td>
+                        </tr>
+                        <tr><th>Status Kredensial</th><td>{{ nakes.status_kredensial }}</td></tr>
+                        <tr><th>Kewenangan Klinis</th><td>{{ nakes.kewenangan_klinis }}</td></tr>
+                        {% if nakes.catatan %}
+                        <tr><th>Catatan</th><td>{{ nakes.catatan }}</td></tr>
+                        {% endif %}
+                        <tr><th>Terakhir Diupdate</th><td>{{ nakes.updated_at }}</td></tr>
+                    </table>
+                </div>
+
+                <div class="d-md-none small">
+                    <div class="mb-2">
+                        <span class="text-muted d-block">Profesi</span>
+                        <strong>{{ nakes.get_profesi_display }}</strong>
+                    </div>
+                    <div class="mb-2">
+                        <span class="text-muted d-block">Unit Kerja</span>
+                        <strong>{{ nakes.unit_kerja }}</strong>
+                    </div>
+                    <hr class="my-2">
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <span class="text-muted d-block">No STR</span>
+                            <code>{{ nakes.no_str }}</code>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Berlaku</span>
+                            {{ nakes.masa_berlaku_str }}
+                            {% if nakes.str_sisa_hari < 0 %}
+                                <span class="badge bg-danger">Expired</span>
+                            {% elif nakes.str_sisa_hari <= 180 %}
+                                <span class="badge bg-warning text-dark">{{ nakes.str_sisa_hari }}d</span>
+                            {% else %}
+                                <span class="badge bg-success">OK</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row g-2 mb-2">
+                        <div class="col-6">
+                            <span class="text-muted d-block">No SIP</span>
+                            <code>{{ nakes.no_sip }}</code>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Berlaku</span>
+                            {{ nakes.masa_berlaku_sip }}
+                            {% if nakes.sip_sisa_hari < 0 %}
+                                <span class="badge bg-danger">Expired</span>
+                            {% elif nakes.sip_sisa_hari <= 180 %}
+                                <span class="badge bg-warning text-dark">{{ nakes.sip_sisa_hari }}d</span>
+                            {% else %}
+                                <span class="badge bg-success">OK</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <hr class="my-2">
+                    <div class="row g-2">
+                        <div class="col-6">
+                            <span class="text-muted d-block">Kredensial</span>
+                            <strong>{{ nakes.status_kredensial }}</strong>
+                        </div>
+                        <div class="col-6">
+                            <span class="text-muted d-block">Kewenangan</span>
+                            <strong>{{ nakes.kewenangan_klinis }}</strong>
+                        </div>
+                    </div>
+                    {% if nakes.catatan %}
+                    <div class="mt-2">
+                        <span class="text-muted d-block">Catatan</span>
+                        {{ nakes.catatan }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-12 col-lg-4">
+        <div class="card shadow-sm">
+            <div class="card-header bg-white py-2">
+                <h6 class="mb-0 small fw-bold">Dokumen</h6>
+            </div>
+            <div class="card-body p-2 p-md-3">
+                {% if dokumen %}
+                    <ul class="list-group list-group-flush mb-3">
+                        {% for d in dokumen %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2">
+                            <div class="small">
+                                <span class="badge bg-secondary me-1">{{ d.jenis }}</span>
+                                <a href="{{ d.file.url }}" target="_blank">{{ d.nama_file }}</a>
+                                <br><span class="text-muted" style="font-size:0.75rem">{{ d.uploaded_at|date:"d/m/Y H:i" }}</span>
+                            </div>
+                            <form method="post" action="{% url 'nakes:dokumen_delete' d.pk %}" onsubmit="return confirm('Hapus dokumen ini?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger py-0 px-1">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </form>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                {% else %}
+                    <p class="text-muted small mb-3">Belum ada dokumen.</p>
+                {% endif %}
+
+                <hr class="my-2">
+                <h6 class="small fw-bold">Upload Dokumen</h6>
+                <form method="post" action="{% url 'nakes:dokumen_upload' nakes.pk %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <div class="mb-2">
+                        <select name="jenis" class="form-select form-select-sm" required>
+                            <option value="">-- Jenis --</option>
+                            <option value="STR">Surat Tanda Registrasi</option>
+                            <option value="SIP">Surat Izin Praktik</option>
+                            <option value="Sertifikat">Sertifikat Kredensial</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
+                    <div class="mb-2">
+                        <input type="text" name="nama_file" class="form-control form-control-sm" placeholder="Nama file" required>
+                    </div>
+                    <div class="mb-2">
+                        <input type="file" name="file" class="form-control form-control-sm" required>
+                    </div>
+                    <button type="submit" class="btn btn-sm btn-primary w-100">Upload</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
