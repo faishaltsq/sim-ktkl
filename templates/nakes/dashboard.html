@@ -1,51 +1,54 @@
 {% extends "base.html" %}
 
 {% block title %}Dashboard - SIM KTKL{% endblock %}
-{% block page_title %}Dashboard Pengawasan & Monitoring{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
 {% block page_title_mobile %}Dashboard{% endblock %}
 
 {% block content %}
 <div class="row g-3 mb-4">
     <div class="col-6 col-md-4">
-        <div class="card metric-card shadow-sm">
+        <div class="card metric-card metric-primary">
             <div class="card-body">
-                <div class="metric-value text-primary">{{ total }}</div>
+                <div class="metric-value">{{ total }}</div>
                 <div class="metric-label">Total Nakes</div>
             </div>
         </div>
     </div>
     <div class="col-6 col-md-4">
-        <div class="card metric-card shadow-sm">
+        <div class="card metric-card metric-success">
             <div class="card-body">
-                <div class="metric-value text-success">{{ kredensial_selesai }}</div>
+                <div class="metric-value">{{ kredensial_selesai }}</div>
                 <div class="metric-label">Kredensial Selesai</div>
             </div>
         </div>
     </div>
     <div class="col-12 col-md-4">
-        <div class="card metric-card shadow-sm">
+        <div class="card metric-card metric-info">
             <div class="card-body">
-                <div class="metric-value text-info">{{ kewenangan_aktif }}</div>
+                <div class="metric-value">{{ kewenangan_aktif }}</div>
                 <div class="metric-label">Kewenangan Aktif</div>
             </div>
         </div>
     </div>
 </div>
 
-<div class="card shadow-sm">
-    <div class="card-header bg-white py-2">
-        <h6 class="mb-0 small fw-bold">Peringatan Dini Masa Berlaku (STR / SIP)</h6>
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <span>Peringatan Masa Berlaku</span>
+        <span class="badge-status-{% if warnings %}warning{% else %}success{% endif %}" style="font-size:0.7rem;padding:0.25em 0.6em;border-radius:0.25rem;">
+            {% if warnings %}{{ warnings|length }} peringatan{% else %}Semua aman{% endif %}
+        </span>
     </div>
     <div class="card-body p-2 p-md-3">
         {% if warnings %}
             {% for w in warnings %}
-                <div class="alert alert-{{ w.level }} py-2 mb-2 small">
+                <div class="alert alert-{{ w.level }} py-2 mb-2">
                     <strong>{{ w.doc }}</strong> &mdash; {{ w.msg }}
                 </div>
             {% endfor %}
         {% else %}
-            <div class="alert alert-success py-2 mb-0 small">
-                Semua dokumen STR dan SIP masih aman (lebih dari 6 bulan ke depan).
+            <div class="alert alert-success py-2 mb-0">
+                Semua dokumen STR dan SIP dalam status aktif.
             </div>
         {% endif %}
     </div>

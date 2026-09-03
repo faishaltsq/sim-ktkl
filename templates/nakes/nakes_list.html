@@ -5,83 +5,81 @@
 {% block page_title_mobile %}Data Nakes{% endblock %}
 
 {% block content %}
-<div class="card shadow-sm mb-3">
-    <div class="card-body py-2">
+<div class="card mb-3">
+    <div class="card-body py-2 px-3">
         <form method="get" class="row g-2 align-items-center">
             <div class="col-12 col-md-8">
                 {{ form.q }}
             </div>
             <div class="col-6 col-md-2">
-                <button type="submit" class="btn btn-outline-primary w-100 btn-sm btn-md-normal">Cari</button>
+                <button type="submit" class="btn btn-outline-primary btn-sm w-100">Cari</button>
             </div>
             <div class="col-6 col-md-2">
-                <a href="{% url 'nakes:create' %}" class="btn btn-primary w-100 btn-sm btn-md-normal">Tambah</a>
+                <a href="{% url 'nakes:create' %}" class="btn btn-primary btn-sm w-100">Tambah</a>
             </div>
         </form>
     </div>
 </div>
 
 <div class="d-none d-md-block">
-    <div class="card shadow-sm">
+    <div class="card">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
-                <thead class="table-light">
+                <thead>
                     <tr>
                         <th>Nama</th>
                         <th>Profesi</th>
                         <th>Unit Kerja</th>
-                        <th>No STR</th>
-                        <th>Berlaku STR</th>
-                        <th>No SIP</th>
-                        <th>Berlaku SIP</th>
+                        <th>STR</th>
+                        <th>Berlaku</th>
+                        <th>SIP</th>
+                        <th>Berlaku</th>
                         <th>Kredensial</th>
-                        <th>Kewenangan</th>
                         <th></th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for n in nakes_list %}
                     <tr>
-                        <td><a href="{% url 'nakes:detail' n.pk %}">{{ n.nama }}</a></td>
+                        <td><a href="{% url 'nakes:detail' n.pk %}" style="text-decoration:none;font-weight:500;">{{ n.nama }}</a></td>
                         <td>{{ n.profesi }}</td>
                         <td>{{ n.unit_kerja }}</td>
                         <td><code>{{ n.no_str }}</code></td>
                         <td>
                             {% if n.str_sisa_hari < 0 %}
-                                <span class="badge bg-danger">{{ n.masa_berlaku_str }}</span>
+                                <span class="badge badge-status-danger">{{ n.masa_berlaku_str }}</span>
                             {% elif n.str_sisa_hari <= 180 %}
-                                <span class="badge bg-warning text-dark">{{ n.masa_berlaku_str }}</span>
+                                <span class="badge badge-status-warning">{{ n.masa_berlaku_str }}</span>
                             {% else %}
-                                {{ n.masa_berlaku_str }}
+                                <span style="color:var(--text-secondary);">{{ n.masa_berlaku_str }}</span>
                             {% endif %}
                         </td>
                         <td><code>{{ n.no_sip }}</code></td>
                         <td>
                             {% if n.sip_sisa_hari < 0 %}
-                                <span class="badge bg-danger">{{ n.masa_berlaku_sip }}</span>
+                                <span class="badge badge-status-danger">{{ n.masa_berlaku_sip }}</span>
                             {% elif n.sip_sisa_hari <= 180 %}
-                                <span class="badge bg-warning text-dark">{{ n.masa_berlaku_sip }}</span>
+                                <span class="badge badge-status-warning">{{ n.masa_berlaku_sip }}</span>
                             {% else %}
-                                {{ n.masa_berlaku_sip }}
+                                <span style="color:var(--text-secondary);">{{ n.masa_berlaku_sip }}</span>
                             {% endif %}
                         </td>
                         <td>
                             {% if n.status_kredensial == "Selesai" %}
-                                <span class="badge bg-success">{{ n.status_kredensial }}</span>
+                                <span class="badge badge-status-success">{{ n.status_kredensial }}</span>
                             {% elif n.status_kredensial == "Dalam Proses" %}
-                                <span class="badge bg-info">{{ n.status_kredensial }}</span>
+                                <span class="badge badge-status-info">{{ n.status_kredensial }}</span>
                             {% else %}
-                                <span class="badge bg-secondary">{{ n.status_kredensial }}</span>
+                                <span class="badge badge-status-neutral">{{ n.status_kredensial }}</span>
                             {% endif %}
                         </td>
-                        <td>{{ n.kewenangan_klinis }}</td>
                         <td>
-                            <a href="{% url 'nakes:update' n.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                            <a href="{% url 'nakes:update' n.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.75rem;">Edit</a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="10" class="text-center text-muted py-3">Belum ada data.</td>
+                        <td colspan="9" class="text-center py-4" style="color:var(--text-muted);">Belum ada data tenaga kesehatan.</td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -92,53 +90,53 @@
 
 <div class="d-md-none">
     {% for n in nakes_list %}
-    <div class="card shadow-sm mb-2">
+    <div class="card mb-2">
         <div class="card-body p-3">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
-                    <a href="{% url 'nakes:detail' n.pk %}" class="fw-bold text-decoration-none">{{ n.nama }}</a>
-                    <div class="text-muted small">{{ n.profesi }} &middot; {{ n.unit_kerja }}</div>
+                    <a href="{% url 'nakes:detail' n.pk %}" style="font-weight:600;text-decoration:none;color:var(--text-primary);font-size:0.9rem;">{{ n.nama }}</a>
+                    <div style="color:var(--text-muted);font-size:0.78rem;">{{ n.profesi }} &middot; {{ n.unit_kerja }}</div>
                 </div>
-                <a href="{% url 'nakes:update' n.pk %}" class="btn btn-sm btn-outline-secondary">Edit</a>
+                <a href="{% url 'nakes:update' n.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;">Edit</a>
             </div>
-            <div class="row g-2 small">
+            <div class="row g-2" style="font-size:0.78rem;">
                 <div class="col-6">
-                    <span class="text-muted">STR:</span> <code>{{ n.no_str }}</code>
-                    <br>
+                    <span style="color:var(--text-muted);">STR</span><br>
+                    <code>{{ n.no_str }}</code><br>
                     {% if n.str_sisa_hari < 0 %}
-                        <span class="badge bg-danger">{{ n.masa_berlaku_str }}</span>
+                        <span class="badge badge-status-danger mt-1">{{ n.masa_berlaku_str }}</span>
                     {% elif n.str_sisa_hari <= 180 %}
-                        <span class="badge bg-warning text-dark">{{ n.masa_berlaku_str }}</span>
+                        <span class="badge badge-status-warning mt-1">{{ n.masa_berlaku_str }}</span>
                     {% else %}
-                        <span class="text-muted">s/d {{ n.masa_berlaku_str }}</span>
+                        <span style="color:var(--text-secondary);">s/d {{ n.masa_berlaku_str }}</span>
                     {% endif %}
                 </div>
                 <div class="col-6">
-                    <span class="text-muted">SIP:</span> <code>{{ n.no_sip }}</code>
-                    <br>
+                    <span style="color:var(--text-muted);">SIP</span><br>
+                    <code>{{ n.no_sip }}</code><br>
                     {% if n.sip_sisa_hari < 0 %}
-                        <span class="badge bg-danger">{{ n.masa_berlaku_sip }}</span>
+                        <span class="badge badge-status-danger mt-1">{{ n.masa_berlaku_sip }}</span>
                     {% elif n.sip_sisa_hari <= 180 %}
-                        <span class="badge bg-warning text-dark">{{ n.masa_berlaku_sip }}</span>
+                        <span class="badge badge-status-warning mt-1">{{ n.masa_berlaku_sip }}</span>
                     {% else %}
-                        <span class="text-muted">s/d {{ n.masa_berlaku_sip }}</span>
+                        <span style="color:var(--text-secondary);">s/d {{ n.masa_berlaku_sip }}</span>
                     {% endif %}
                 </div>
             </div>
             <div class="mt-2">
                 {% if n.status_kredensial == "Selesai" %}
-                    <span class="badge bg-success">{{ n.status_kredensial }}</span>
+                    <span class="badge badge-status-success">{{ n.status_kredensial }}</span>
                 {% elif n.status_kredensial == "Dalam Proses" %}
-                    <span class="badge bg-info">{{ n.status_kredensial }}</span>
+                    <span class="badge badge-status-info">{{ n.status_kredensial }}</span>
                 {% else %}
-                    <span class="badge bg-secondary">{{ n.status_kredensial }}</span>
+                    <span class="badge badge-status-neutral">{{ n.status_kredensial }}</span>
                 {% endif %}
-                <span class="text-muted small ms-1">{{ n.kewenangan_klinis }}</span>
+                <span style="color:var(--text-muted);font-size:0.72rem;margin-left:0.25rem;">{{ n.kewenangan_klinis }}</span>
             </div>
         </div>
     </div>
     {% empty %}
-    <div class="text-center text-muted py-4">Belum ada data.</div>
+    <div class="text-center py-4" style="color:var(--text-muted);">Belum ada data.</div>
     {% endfor %}
 </div>
 {% endblock %}
