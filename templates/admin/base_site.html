@@ -1,0 +1,11 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ title }} | VIRA NAKES Admin{% endblock %}
+
+{% block branding %}
+<h1 id="site-name">
+    <a href="{% url 'admin:index' %}">VIRA NAKES <span style="font-weight:400;font-size:0.75rem;opacity:0.7;">Admin Panel</span></a>
+</h1>
+{% endblock %}
+
+{% block nav-global %}{% endblock %}

@@ -1,0 +1,208 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+    :root {
+        --primary: #0C7C84;
+        --primary-deep: #065A60;
+        --primary-light: #E8F6F3;
+        --sidebar-bg: #0F1923;
+        --header-bg: #0F1923;
+    }
+
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif !important;
+    }
+
+    #header {
+        background: var(--header-bg) !important;
+        color: #fff;
+        padding: 12px 20px;
+        line-height: 1.4;
+    }
+    #header a:link, #header a:visited {
+        color: #fff;
+    }
+    #branding h1 {
+        font-size: 1.1rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
+    }
+    #branding h1 a:link, #branding h1 a:visited {
+        color: #fff !important;
+    }
+    #user-tools {
+        font-size: 0.8rem;
+    }
+    #user-tools a {
+        color: var(--primary-light) !important;
+        border-bottom: none !important;
+    }
+    #user-tools a:hover {
+        color: #fff !important;
+    }
+
+    div.breadcrumbs {
+        background: var(--primary-deep) !important;
+        color: rgba(255,255,255,0.8);
+        font-size: 0.78rem;
+        padding: 8px 20px;
+    }
+    div.breadcrumbs a {
+        color: #fff !important;
+    }
+
+    .module h2, .module caption {
+        background: var(--primary) !important;
+        color: #fff !important;
+        font-size: 0.82rem;
+        font-weight: 600;
+        padding: 8px 12px;
+    }
+
+    .button, input[type=submit], .submit-row input {
+        background: var(--primary) !important;
+        border: none;
+        border-radius: 4px;
+        font-family: 'Inter', sans-serif;
+        font-weight: 500;
+    }
+    .button:hover, input[type=submit]:hover, .submit-row input:hover {
+        background: var(--primary-deep) !important;
+    }
+    .button.default {
+        background: var(--primary) !important;
+    }
+
+    a:link, a:visited {
+        color: var(--primary);
+    }
+    a:hover {
+        color: var(--primary-deep);
+    }
+
+    #changelist-filter h2 {
+        background: var(--sidebar-bg) !important;
+        color: #fff;
+    }
+    #changelist-filter h3 {
+        color: var(--primary);
+        font-weight: 600;
+    }
+    #changelist-filter li.selected a {
+        color: var(--primary) !important;
+        font-weight: 600;
+    }
+
+    .object-tools a:link, .object-tools a:visited {
+        background: var(--primary) !important;
+        border-radius: 4px;
+    }
+    .object-tools a:hover {
+        background: var(--primary-deep) !important;
+    }
+
+    #nav-sidebar {
+        background: #f7f9fb;
+    }
+    #nav-sidebar .module h2 {
+        background: var(--sidebar-bg) !important;
+    }
+    #nav-sidebar .module th {
+        background: var(--primary-light);
+        color: var(--primary-deep);
+        font-weight: 600;
+        font-size: 0.78rem;
+    }
+
+    .dashboard #content-main .module table th a:link,
+    .dashboard #content-main .module table th a:visited {
+        color: var(--primary) !important;
+    }
+
+    input[type=text], input[type=password], input[type=email],
+    input[type=url], input[type=number], textarea, select {
+        border-radius: 4px;
+        border: 1px solid #d1d5db;
+        padding: 6px 10px;
+        font-family: 'Inter', sans-serif;
+        font-size: 0.85rem;
+    }
+    input[type=text]:focus, input[type=password]:focus, textarea:focus, select:focus {
+        border-color: var(--primary);
+        outline: none;
+        box-shadow: 0 0 0 2px rgba(12, 124, 132, 0.15);
+    }
+
+    .help, .help-text {
+        font-size: 0.75rem;
+        color: #64748b;
+    }
+
+    #content {
+        font-size: 0.85rem;
+    }
+    #content h1 {
+        font-size: 1.2rem;
+        font-weight: 700;
+    }
+    #content h2 {
+        font-size: 1rem;
+        font-weight: 600;
+    }
+
+    .results table thead th {
+        background: #f1f5f9 !important;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-weight: 600;
+        color: #475569;
+    }
+
+    .submit-row {
+        background: #f8fafb !important;
+        border-top: 1px solid #e2e8f0;
+        padding: 12px;
+    }
+    .submit-row .deletelink {
+        background: #DC2626 !important;
+        border-radius: 4px;
+    }
+    .submit-row .deletelink:hover {
+        background: #b91c1c !important;
+    }
+
+    .messagelist .success {
+        background: #ecfdf5;
+        color: #065f46;
+        border-left: 3px solid #059669;
+    }
+    .messagelist .error {
+        background: #fef2f2;
+        color: #991b1b;
+        border-left: 3px solid #dc2626;
+    }
+    .messagelist .warning {
+        background: #fffbeb;
+        color: #92400e;
+        border-left: 3px solid #d97706;
+    }
+
+    .calendarbox, .clockbox {
+        border-radius: 6px;
+    }
+
+    p.paginator {
+        font-size: 0.8rem;
+        color: #64748b;
+    }
+
+    .vDateField, .vTimeField {
+        font-family: 'Inter', sans-serif;
+    }
+</style>
+{% endblock %}
