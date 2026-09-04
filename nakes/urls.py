@@ -16,4 +16,8 @@ urlpatterns = [
     path('export/', views.export_excel, name='export'),
     path('template/', views.download_template, name='download_template'),
     path('import/', views.upload_bulk, name='upload_bulk'),
+    path('dokumen/', views.dokumen_hub, name='dokumen_hub'),
+    path('dokumen/umum/upload/', views.dokumen_umum_create, name='dokumen_umum_create'),
+    path('dokumen/umum/<int:pk>/edit/', views.dokumen_umum_edit, name='dokumen_umum_edit'),
+    path('dokumen/umum/<int:pk>/hapus/', views.dokumen_umum_delete, name='dokumen_umum_delete'),
 ]

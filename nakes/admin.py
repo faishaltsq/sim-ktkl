@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Nakes, DokumenNakes, AuditLog
+from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum
 
 
 @admin.register(Nakes)
@@ -20,3 +20,10 @@ class AuditLogAdmin(admin.ModelAdmin):
     list_display = ['timestamp', 'user', 'aksi', 'model_name', 'object_repr']
     list_filter = ['aksi', 'model_name']
     readonly_fields = ['user', 'aksi', 'model_name', 'object_id', 'object_repr', 'detail', 'timestamp']
+
+
+@admin.register(DokumenUmum)
+class DokumenUmumAdmin(admin.ModelAdmin):
+    list_display = ['judul', 'kategori', 'uploaded_at', 'uploaded_by']
+    list_filter = ['kategori']
+    search_fields = ['judul', 'deskripsi']

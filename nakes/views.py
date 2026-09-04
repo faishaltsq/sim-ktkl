@@ -7,8 +7,8 @@ from django.http import HttpResponse
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 
-from .models import Nakes, DokumenNakes, AuditLog
-from .forms import NakesForm, DokumenForm, NakesSearchForm
+from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum
+from .forms import NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm
 
 
 def log_audit(user, aksi, obj, detail=''):
@@ -411,3 +411,77 @@ def upload_bulk(request):
         return redirect('nakes:upload_bulk')
 
     return render(request, 'nakes/upload_bulk.html')
+
+
+@login_required
+def dokumen_hub(request):
+    tab = request.GET.get('tab', 'nakes')
+    q = request.GET.get('q', '').strip()
+    kategori = request.GET.get('kategori', '')
+
+    dokumen_nakes = DokumenNakes.objects.select_related('nakes', 'uploaded_by').all()
+    if q:
+        dokumen_nakes = dokumen_nakes.filter(
+            Q(nama_file__icontains=q) | Q(nakes__nama__icontains=q)
+        )
+
+    dokumen_umum = DokumenUmum.objects.select_related('uploaded_by').all()
+    if q and tab == 'umum':
+        dokumen_umum = dokumen_umum.filter(
+            Q(judul__icontains=q) | Q(deskripsi__icontains=q)
+        )
+    if kategori and tab == 'umum':
+        dokumen_umum = dokumen_umum.filter(kategori=kategori)
+
+    context = {
+        'tab': tab,
+        'q': q,
+        'kategori': kategori,
+        'dokumen_nakes': dokumen_nakes,
+        'dokumen_umum': dokumen_umum,
+        'kategori_choices': DokumenUmum.KATEGORI_CHOICES,
+    }
+    return render(request, 'nakes/dokumen_hub.html', context)
+
+
+@login_required
+def dokumen_umum_create(request):
+    if request.method == 'POST':
+        form = DokumenUmumForm(request.POST, request.FILES)
+        if form.is_valid():
+            doc = form.save(commit=False)
+            doc.uploaded_by = request.user
+            doc.save()
+            log_audit(request.user, 'CREATE', doc, detail=f'Upload dokumen umum: {doc.judul}')
+            messages.success(request, f'Dokumen "{doc.judul}" berhasil diupload.')
+            return redirect('nakes:dokumen_hub')
+    else:
+        form = DokumenUmumForm()
+    return render(request, 'nakes/dokumen_umum_form.html', {'form': form, 'title': 'Upload Dokumen Umum'})
+
+
+@login_required
+def dokumen_umum_edit(request, pk):
+    doc = get_object_or_404(DokumenUmum, pk=pk)
+    if request.method == 'POST':
+        form = DokumenUmumForm(request.POST, request.FILES, instance=doc)
+        if form.is_valid():
+            changed = form.changed_data
+            doc = form.save()
+            log_audit(request.user, 'UPDATE', doc, detail=f'Field diubah: {", ".join(changed)}')
+            messages.success(request, f'Dokumen "{doc.judul}" berhasil diperbarui.')
+            return redirect('nakes:dokumen_hub')
+    else:
+        form = DokumenUmumForm(instance=doc)
+    return render(request, 'nakes/dokumen_umum_form.html', {'form': form, 'title': f'Edit - {doc.judul}'})
+
+
+@login_required
+def dokumen_umum_delete(request, pk):
+    doc = get_object_or_404(DokumenUmum, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', doc)
+        doc.file.delete(save=False)
+        doc.delete()
+        messages.success(request, 'Dokumen berhasil dihapus.')
+    return redirect('nakes:dokumen_hub')

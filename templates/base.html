@@ -375,6 +375,11 @@
                             <i class="bi bi-upload"></i> Import Bulk
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'dokumen_hub' %}active{% endif %}" href="{% url 'nakes:dokumen_hub' %}">
+                            <i class="bi bi-folder2-open"></i> Dokumen
+                        </a>
+                    </li>
                 </ul>
                 <div class="nav-section mt-2">Laporan</div>
                 <ul class="nav flex-column">
@@ -436,6 +441,11 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'upload_bulk' %}active{% endif %}" href="{% url 'nakes:upload_bulk' %}">
                         <i class="bi bi-upload"></i> Import Bulk
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'dokumen_hub' %}active{% endif %}" href="{% url 'nakes:dokumen_hub' %}">
+                        <i class="bi bi-folder2-open"></i> Dokumen
                     </a>
                 </li>
             </ul>

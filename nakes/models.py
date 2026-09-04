@@ -115,3 +115,52 @@ class AuditLog(models.Model):
 
     def __str__(self):
         return f"{self.timestamp} - {self.user} - {self.aksi} {self.object_repr}"
+
+
+class DokumenUmum(models.Model):
+    KATEGORI_CHOICES = [
+        ('SOP', 'SOP (Standar Operasional Prosedur)'),
+        ('SK', 'Surat Keputusan'),
+        ('Panduan', 'Panduan / Pedoman'),
+        ('Formulir', 'Formulir'),
+        ('Kebijakan', 'Kebijakan'),
+        ('Lainnya', 'Lainnya'),
+    ]
+
+    judul = models.CharField(max_length=200)
+    kategori = models.CharField(max_length=20, choices=KATEGORI_CHOICES)
+    deskripsi = models.TextField(blank=True)
+    file = models.FileField(upload_to='dokumen_umum/%Y/%m/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    uploaded_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+    )
+
+    class Meta:
+        verbose_name = 'Dokumen Umum'
+        verbose_name_plural = 'Dokumen Umum'
+        ordering = ['-uploaded_at']
+
+    def __str__(self):
+        return f"{self.judul} ({self.kategori})"
+
+    @property
+    def file_extension(self):
+        import os
+        return os.path.splitext(self.file.name)[1].lower() if self.file else ''
+
+    @property
+    def file_size_display(self):
+        try:
+            size = self.file.size
+            if size < 1024:
+                return f"{size} B"
+            elif size < 1024 * 1024:
+                return f"{size / 1024:.1f} KB"
+            else:
+                return f"{size / (1024 * 1024):.1f} MB"
+        except (FileNotFoundError, ValueError):
+            return '-'

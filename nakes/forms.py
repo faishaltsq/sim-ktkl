@@ -1,5 +1,5 @@
 from django import forms
-from .models import Nakes, DokumenNakes
+from .models import Nakes, DokumenNakes, DokumenUmum
 
 
 class NakesForm(forms.ModelForm):
@@ -33,3 +33,15 @@ class NakesSearchForm(forms.Form):
             'class': 'form-control',
         }),
     )
+
+
+class DokumenUmumForm(forms.ModelForm):
+    class Meta:
+        model = DokumenUmum
+        fields = ['judul', 'kategori', 'deskripsi', 'file']
+        widgets = {
+            'judul': forms.TextInput(attrs={'class': 'form-control'}),
+            'kategori': forms.Select(attrs={'class': 'form-select'}),
+            'deskripsi': forms.Textarea(attrs={'rows': 3, 'class': 'form-control'}),
+            'file': forms.FileInput(attrs={'class': 'form-control'}),
+        }
