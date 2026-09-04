@@ -18,6 +18,17 @@
                 <a href="{% url 'nakes:create' %}" class="btn btn-primary btn-sm w-100">Tambah</a>
             </div>
         </form>
+        <div class="d-flex gap-2 mt-2">
+            <a href="{% url 'nakes:upload_bulk' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-upload me-1"></i>Import Bulk
+            </a>
+            <a href="{% url 'nakes:download_template' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-file-earmark-arrow-down me-1"></i>Download Template
+            </a>
+            <a href="{% url 'nakes:export' %}" class="btn btn-outline-secondary btn-sm">
+                <i class="bi bi-download me-1"></i>Export
+            </a>
+        </div>
     </div>
 </div>
 

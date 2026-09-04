@@ -370,6 +370,11 @@
                             <i class="bi bi-person-plus"></i> Tambah Nakes
                         </a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'upload_bulk' %}active{% endif %}" href="{% url 'nakes:upload_bulk' %}">
+                            <i class="bi bi-upload"></i> Import Bulk
+                        </a>
+                    </li>
                 </ul>
                 <div class="nav-section mt-2">Laporan</div>
                 <ul class="nav flex-column">
@@ -426,6 +431,11 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}" href="{% url 'nakes:create' %}">
                         <i class="bi bi-person-plus"></i> Tambah Nakes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'upload_bulk' %}active{% endif %}" href="{% url 'nakes:upload_bulk' %}">
+                        <i class="bi bi-upload"></i> Import Bulk
                     </a>
                 </li>
             </ul>

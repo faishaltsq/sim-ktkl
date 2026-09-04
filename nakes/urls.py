@@ -14,4 +14,6 @@ urlpatterns = [
     path('dokumen/<int:pk>/hapus/', views.dokumen_delete, name='dokumen_delete'),
     path('audit/', views.audit_log, name='audit_log'),
     path('export/', views.export_excel, name='export'),
+    path('template/', views.download_template, name='download_template'),
+    path('import/', views.upload_bulk, name='upload_bulk'),
 ]
