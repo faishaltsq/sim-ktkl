@@ -92,6 +92,24 @@ class DokumenNakes(models.Model):
     def __str__(self):
         return f"{self.jenis} - {self.nakes.nama}"
 
+    @property
+    def file_extension(self):
+        import os
+        return os.path.splitext(self.file.name)[1].lower() if self.file else ''
+
+    @property
+    def file_size_display(self):
+        try:
+            size = self.file.size
+            if size < 1024:
+                return f"{size} B"
+            elif size < 1024 * 1024:
+                return f"{size / 1024:.1f} KB"
+            else:
+                return f"{size / (1024 * 1024):.1f} MB"
+        except (FileNotFoundError, ValueError):
+            return '-'
+
 
 class AuditLog(models.Model):
     AKSI_CHOICES = [

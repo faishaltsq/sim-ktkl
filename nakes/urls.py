@@ -11,6 +11,7 @@ urlpatterns = [
     path('nakes/<int:pk>/edit/', views.nakes_update, name='update'),
     path('nakes/<int:pk>/hapus/', views.nakes_delete, name='delete'),
     path('nakes/<int:nakes_pk>/upload/', views.dokumen_upload, name='dokumen_upload'),
+    path('dokumen/<int:pk>/download/', views.dokumen_download, name='dokumen_download'),
     path('dokumen/<int:pk>/hapus/', views.dokumen_delete, name='dokumen_delete'),
     path('audit/', views.audit_log, name='audit_log'),
     path('export/', views.export_excel, name='export'),
@@ -18,6 +19,7 @@ urlpatterns = [
     path('import/', views.upload_bulk, name='upload_bulk'),
     path('dokumen/', views.dokumen_hub, name='dokumen_hub'),
     path('dokumen/umum/upload/', views.dokumen_umum_create, name='dokumen_umum_create'),
+    path('dokumen/umum/<int:pk>/download/', views.dokumen_umum_download, name='dokumen_umum_download'),
     path('dokumen/umum/<int:pk>/edit/', views.dokumen_umum_edit, name='dokumen_umum_edit'),
     path('dokumen/umum/<int:pk>/hapus/', views.dokumen_umum_delete, name='dokumen_umum_delete'),
 ]

@@ -1,14 +1,127 @@
-from datetime import date
+import re
+import datetime
+from datetime import date, date as date_type
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
+from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse
+from django.http import HttpResponse, FileResponse
+from django.urls import reverse
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
+from openpyxl.utils.datetime import from_excel
+from openpyxl.worksheet.datavalidation import DataValidation
 
 from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum
 from .forms import NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm
+
+
+HEADER_MAP = {
+    'nama': 'nama',
+    'namalengkap': 'nama',
+    'name': 'nama',
+    'profesi': 'profesi',
+    'jabatan': 'profesi',
+    'profession': 'profesi',
+    'unitkerja': 'unit_kerja',
+    'unit': 'unit_kerja',
+    'departemen': 'unit_kerja',
+    'instalasi': 'unit_kerja',
+    'nostr': 'no_str',
+    'nomorstr': 'no_str',
+    'str': 'no_str',
+    'masaberlakustr': 'masa_berlaku_str',
+    'berlakustr': 'masa_berlaku_str',
+    'tglberlakustr': 'masa_berlaku_str',
+    'expiredstr': 'masa_berlaku_str',
+    'nosip': 'no_sip',
+    'nomorsip': 'no_sip',
+    'sip': 'no_sip',
+    'masaberlakusip': 'masa_berlaku_sip',
+    'berlakusip': 'masa_berlaku_sip',
+    'tglberlakusip': 'masa_berlaku_sip',
+    'expiredsip': 'masa_berlaku_sip',
+    'statuskredensial': 'status_kredensial',
+    'status': 'status_kredensial',
+    'kredensial': 'status_kredensial',
+    'kewenanganklinis': 'kewenangan_klinis',
+    'kewenangan': 'kewenangan_klinis',
+    'catatan': 'catatan',
+    'keterangan': 'catatan',
+    'note': 'catatan',
+}
+
+PROFESI_MAP = {
+    'atlm': 'ATLM',
+    'atlmteknisilaboratoriummedik': 'ATLM',
+    'teknisilaboratoriummedik': 'ATLM',
+    'radiografer': 'Radiografer',
+    'fisioterapis': 'Fisioterapis',
+    'fisioterapi': 'Fisioterapis',
+    'nutrisionis': 'Nutrisionis',
+    'nutrisi': 'Nutrisionis',
+    'gizi': 'Nutrisionis',
+    'perekammedis': 'Perekam Medis',
+    'rekammedis': 'Perekam Medis',
+    'rm': 'Perekam Medis',
+    'apoteker': 'Apoteker',
+    'sanitarian': 'Sanitarian',
+    'lainnya': 'Lainnya',
+    'lain': 'Lainnya',
+}
+
+STATUS_MAP = {
+    'belumpengajuan': 'Belum Pengajuan',
+    'belum': 'Belum Pengajuan',
+    'belumkredensial': 'Belum Pengajuan',
+    'dalamproses': 'Dalam Proses',
+    'proses': 'Dalam Proses',
+    'sedangproses': 'Dalam Proses',
+    'selesai': 'Selesai',
+    'sudah': 'Selesai',
+}
+
+KEWENANGAN_MAP = {
+    'aktif': 'Aktif',
+    'evaluasi': 'Evaluasi',
+    'proses': 'Proses',
+    'tidakaktif': 'Tidak Aktif',
+    'nonaktif': 'Tidak Aktif',
+}
+
+SAMPLE_STRS = {'STR-001-2021', 'STR-002-2022', 'STR-CONTOH', 'STR-SAMPLE'}
+
+
+def clean_alphanumeric(val):
+    if val is None:
+        return ''
+    return re.sub(r'[^a-z0-9]', '', str(val).lower())
+
+
+def parse_date_value(val, label):
+    if val is None or str(val).strip() == '':
+        return None, f'{label} kosong'
+    if isinstance(val, (date_type, datetime.datetime)):
+        return val.date() if isinstance(val, datetime.datetime) else val, None
+    if isinstance(val, (int, float)):
+        try:
+            dt = from_excel(val)
+            return dt.date() if isinstance(dt, datetime.datetime) else dt, None
+        except Exception:
+            pass
+    s = str(val).strip()
+    if len(s) >= 10 and (s[4] == '-' or s[4] == '/'):
+        try:
+            return date_type.fromisoformat(s[:10].replace('/', '-')), None
+        except ValueError:
+            pass
+    for fmt in ('%Y-%m-%d', '%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d', '%d.%m.%Y', '%Y.%m.%d', '%d/%m/%y', '%d-%m-%y'):
+        try:
+            return datetime.datetime.strptime(s, fmt).date(), None
+        except ValueError:
+            continue
+    return None, f'{label} format salah (gunakan YYYY-MM-DD atau DD/MM/YYYY)'
 
 
 def log_audit(user, aksi, obj, detail=''):
@@ -142,10 +255,30 @@ def dokumen_upload(request, nakes_pk):
             doc = form.save(commit=False)
             doc.nakes = nakes
             doc.uploaded_by = request.user
+            if not doc.nama_file and doc.file:
+                import os
+                doc.nama_file = os.path.splitext(doc.file.name)[0]
             doc.save()
             log_audit(request.user, 'CREATE', doc, detail=f'Upload {doc.jenis} untuk {nakes.nama}')
             messages.success(request, f'Dokumen {doc.jenis} berhasil diupload.')
+        else:
+            for field, errs in form.errors.items():
+                for err in errs:
+                    messages.error(request, f'Gagal upload dokumen: {err}')
     return redirect('nakes:detail', pk=nakes_pk)
+
+
+@login_required
+def dokumen_download(request, pk):
+    doc = get_object_or_404(DokumenNakes, pk=pk)
+    if not doc.file:
+        messages.error(request, 'File dokumen tidak ditemukan.')
+        return redirect('nakes:detail', pk=doc.nakes.pk)
+    try:
+        return FileResponse(doc.file.open('rb'))
+    except (FileNotFoundError, ValueError):
+        messages.error(request, 'File fisik tidak ditemukan pada server penyimpanan.')
+        return redirect('nakes:detail', pk=doc.nakes.pk)
 
 
 @login_required
@@ -154,7 +287,12 @@ def dokumen_delete(request, pk):
     nakes_pk = doc.nakes.pk
     if request.method == 'POST':
         log_audit(request.user, 'DELETE', doc)
-        doc.file.delete(save=False)
+        try:
+            if doc.file:
+                doc.file.close()
+                doc.file.delete(save=False)
+        except Exception:
+            pass
         doc.delete()
         messages.success(request, 'Dokumen berhasil dihapus.')
     return redirect('nakes:detail', pk=nakes_pk)
@@ -176,7 +314,7 @@ def export_excel(request):
         'Nama', 'Profesi', 'Unit Kerja',
         'No STR', 'Masa Berlaku STR',
         'No SIP', 'Masa Berlaku SIP',
-        'Status Kredensial', 'Kewenangan Klinis',
+        'Status Kredensial', 'Kewenangan Klinis', 'Catatan',
     ]
     ws.append(headers)
 
@@ -186,6 +324,7 @@ def export_excel(request):
             n.no_str, n.masa_berlaku_str.isoformat(),
             n.no_sip, n.masa_berlaku_sip.isoformat(),
             n.status_kredensial, n.kewenangan_klinis,
+            n.catatan,
         ])
 
     response = HttpResponse(
@@ -222,6 +361,37 @@ def download_template(request):
         cell.alignment = center
         cell.border = border
 
+    for row_idx in range(2, 501):
+        ws.cell(row=row_idx, column=4).number_format = '@'
+        ws.cell(row=row_idx, column=5).number_format = 'yyyy-mm-dd'
+        ws.cell(row=row_idx, column=6).number_format = '@'
+        ws.cell(row=row_idx, column=7).number_format = 'yyyy-mm-dd'
+
+    q = '"'
+    dv_profesi = DataValidation(
+        type='list',
+        formula1=f'{q}ATLM,Radiografer,Fisioterapis,Nutrisionis,Perekam Medis,Apoteker,Sanitarian,Lainnya{q}',
+        allow_blank=True,
+    )
+    ws.add_data_validation(dv_profesi)
+    dv_profesi.add('B2:B500')
+
+    dv_status = DataValidation(
+        type='list',
+        formula1=f'{q}Belum Pengajuan,Dalam Proses,Selesai{q}',
+        allow_blank=True,
+    )
+    ws.add_data_validation(dv_status)
+    dv_status.add('H2:H500')
+
+    dv_kewenangan = DataValidation(
+        type='list',
+        formula1=f'{q}Aktif,Evaluasi,Proses,Tidak Aktif{q}',
+        allow_blank=True,
+    )
+    ws.add_data_validation(dv_kewenangan)
+    dv_kewenangan.add('I2:I500')
+
     example_rows = [
         ['Budi Santoso', 'ATLM', 'Laboratorium', 'STR-001-2021', '2026-12-31',
          'SIP-001-2021', '2026-12-31', 'Selesai', 'Aktif', ''],
@@ -230,10 +400,9 @@ def download_template(request):
     ]
 
     note_fill = PatternFill(start_color='F0FAFA', end_color='F0FAFA', fill_type='solid')
-    for row_data in example_rows:
-        row_idx = ws.max_row + 1
+    for row_offset, row_data in enumerate(example_rows, start=2):
         for col, val in enumerate(row_data, 1):
-            cell = ws.cell(row=row_idx, column=col, value=val)
+            cell = ws.cell(row=row_offset, column=col, value=val)
             cell.fill = note_fill
             cell.border = border
 
@@ -253,15 +422,15 @@ def download_template(request):
         ('profesi', 'Pilih: ATLM | Radiografer | Fisioterapis | Nutrisionis | Perekam Medis | Apoteker | Sanitarian | Lainnya'),
         ('unit_kerja', 'Nama unit/departemen kerja'),
         ('no_str', 'Nomor STR (harus unik)'),
-        ('masa_berlaku_str', 'Format: YYYY-MM-DD (contoh: 2026-12-31)'),
+        ('masa_berlaku_str', 'Format: YYYY-MM-DD atau DD/MM/YYYY (contoh: 2026-12-31 atau 31/12/2026)'),
         ('no_sip', 'Nomor SIP (harus unik)'),
-        ('masa_berlaku_sip', 'Format: YYYY-MM-DD (contoh: 2026-12-31)'),
+        ('masa_berlaku_sip', 'Format: YYYY-MM-DD atau DD/MM/YYYY (contoh: 2026-12-31 atau 31/12/2026)'),
         ('status_kredensial', 'Pilih: Belum Pengajuan | Dalam Proses | Selesai'),
         ('kewenangan_klinis', 'Pilih: Aktif | Evaluasi | Proses | Tidak Aktif'),
         ('catatan', 'Opsional. Catatan tambahan'),
         ('', ''),
         ('PENTING', 'Baris pertama (header) JANGAN diubah'),
-        ('PENTING', 'Data dimulai dari baris ke-2'),
+        ('PENTING', 'Baris contoh (warna pastel) dapat ditimpa atau dihapus'),
         ('PENTING', 'no_str dan no_sip harus unik; baris duplikat akan dilewati'),
     ]
     for r, (col_a, col_b) in enumerate(panduan, 2):
@@ -275,6 +444,8 @@ def download_template(request):
 
     info_ws.column_dimensions['A'].width = 22
     info_ws.column_dimensions['B'].width = 80
+
+    wb.active = 0
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -294,82 +465,109 @@ def upload_bulk(request):
 
         try:
             wb = load_workbook(excel_file, data_only=True)
-            ws = wb.active
         except Exception:
-            messages.error(request, 'File tidak valid. Pastikan format .xlsx.')
+            messages.error(request, 'File tidak valid. Pastikan format file .xlsx.')
             return redirect('nakes:upload_bulk')
 
-        EXPECTED_HEADERS = [
-            'nama', 'profesi', 'unit_kerja',
-            'no_str', 'masa_berlaku_str',
-            'no_sip', 'masa_berlaku_sip',
-            'status_kredensial', 'kewenangan_klinis', 'catatan',
-        ]
+        ws = None
+        for sheet_name in wb.sheetnames:
+            sheet_candidate = wb[sheet_name]
+            first_row = [clean_alphanumeric(c.value) for c in sheet_candidate[1]]
+            mapped = {HEADER_MAP[h] for h in first_row if h in HEADER_MAP}
+            if {'nama', 'profesi', 'no_str', 'no_sip'}.issubset(mapped):
+                ws = sheet_candidate
+                break
 
-        headers = [str(c.value).strip().lower() if c.value else '' for c in ws[1]]
-        if headers[:len(EXPECTED_HEADERS)] != EXPECTED_HEADERS:
-            messages.error(request, 'Header kolom tidak sesuai template. Download template terlebih dahulu.')
+        if ws is None:
+            if 'Template Import' in wb.sheetnames:
+                ws = wb['Template Import']
+            else:
+                ws = wb.active
+
+        first_row_raw = [c.value for c in ws[1]]
+        col_map = {}
+        for idx, val in enumerate(first_row_raw):
+            key = clean_alphanumeric(val)
+            field = HEADER_MAP.get(key)
+            if field and field not in col_map:
+                col_map[field] = idx
+
+        REQUIRED_FIELDS = ['nama', 'profesi', 'unit_kerja', 'no_str', 'masa_berlaku_str', 'no_sip', 'masa_berlaku_sip']
+        missing_fields = [f for f in REQUIRED_FIELDS if f not in col_map]
+        if missing_fields:
+            messages.error(request, f'Header kolom tidak lengkap atau tidak sesuai template. Kolom wajib yang belum ditemukan: {", ".join(missing_fields)}.')
             return redirect('nakes:upload_bulk')
-
-        PROFESI_VALID = {'ATLM', 'Radiografer', 'Fisioterapis', 'Nutrisionis',
-                         'Perekam Medis', 'Apoteker', 'Sanitarian', 'Lainnya'}
-        STATUS_VALID = {'Belum Pengajuan', 'Dalam Proses', 'Selesai'}
-        KEWENANGAN_VALID = {'Aktif', 'Evaluasi', 'Proses', 'Tidak Aktif'}
 
         sukses = 0
         errors = []
+        seen_str = set()
+        seen_sip = set()
 
         for row_num, row in enumerate(ws.iter_rows(min_row=2, values_only=True), start=2):
             if all(v is None or str(v).strip() == '' for v in row):
                 continue
 
-            def get(idx):
-                val = row[idx] if len(row) > idx else None
-                return str(val).strip() if val is not None else ''
+            def get_val(field):
+                idx = col_map.get(field)
+                if idx is None or idx >= len(row):
+                    return ''
+                val = row[idx]
+                if val is None:
+                    return ''
+                if isinstance(val, float) and val.is_integer():
+                    return str(int(val)).strip()
+                return str(val).strip()
 
-            nama = get(0)
-            profesi = get(1)
-            unit_kerja = get(2)
-            no_str = get(3)
-            masa_berlaku_str_raw = row[4] if len(row) > 4 else None
-            no_sip = get(5)
-            masa_berlaku_sip_raw = row[6] if len(row) > 6 else None
-            status_kredensial = get(7) or 'Belum Pengajuan'
-            kewenangan_klinis = get(8) or 'Proses'
-            catatan = get(9)
+            no_str = get_val('no_str')
+            no_sip = get_val('no_sip')
+
+            if no_str in SAMPLE_STRS:
+                continue
+
+            nama = get_val('nama')
+            profesi_raw = get_val('profesi')
+            unit_kerja = get_val('unit_kerja')
+            status_raw = get_val('status_kredensial')
+            kewenangan_raw = get_val('kewenangan_klinis')
+            catatan = get_val('catatan')
+
+            idx_masa_str = col_map.get('masa_berlaku_str')
+            masa_str_raw = row[idx_masa_str] if idx_masa_str is not None and idx_masa_str < len(row) else None
+
+            idx_masa_sip = col_map.get('masa_berlaku_sip')
+            masa_sip_raw = row[idx_masa_sip] if idx_masa_sip is not None and idx_masa_sip < len(row) else None
 
             row_errors = []
 
             if not nama:
                 row_errors.append('nama kosong')
-            if profesi not in PROFESI_VALID:
-                row_errors.append(f'profesi tidak valid: "{profesi}"')
+
+            profesi_norm = PROFESI_MAP.get(clean_alphanumeric(profesi_raw))
+            if not profesi_norm:
+                row_errors.append(f'profesi tidak valid: "{profesi_raw}"')
+
+            if not unit_kerja:
+                row_errors.append('unit_kerja kosong')
+
             if not no_str:
                 row_errors.append('no_str kosong')
+
             if not no_sip:
                 row_errors.append('no_sip kosong')
-            if status_kredensial not in STATUS_VALID:
-                row_errors.append(f'status_kredensial tidak valid: "{status_kredensial}"')
-            if kewenangan_klinis not in KEWENANGAN_VALID:
-                row_errors.append(f'kewenangan_klinis tidak valid: "{kewenangan_klinis}"')
 
-            from datetime import date as date_type
-            import datetime
+            status_norm = STATUS_MAP.get(clean_alphanumeric(status_raw), 'Belum Pengajuan') if status_raw else 'Belum Pengajuan'
+            if status_raw and not STATUS_MAP.get(clean_alphanumeric(status_raw)):
+                row_errors.append(f'status_kredensial tidak valid: "{status_raw}"')
 
-            def parse_date(val, label):
-                if val is None:
-                    return None, f'{label} kosong'
-                if isinstance(val, (date_type, datetime.datetime)):
-                    return val.date() if isinstance(val, datetime.datetime) else val, None
-                try:
-                    return date_type.fromisoformat(str(val).strip()), None
-                except ValueError:
-                    return None, f'{label} format salah (gunakan YYYY-MM-DD)'
+            kewenangan_norm = KEWENANGAN_MAP.get(clean_alphanumeric(kewenangan_raw), 'Proses') if kewenangan_raw else 'Proses'
+            if kewenangan_raw and not KEWENANGAN_MAP.get(clean_alphanumeric(kewenangan_raw)):
+                row_errors.append(f'kewenangan_klinis tidak valid: "{kewenangan_raw}"')
 
-            masa_str, err_str = parse_date(masa_berlaku_str_raw, 'masa_berlaku_str')
+            masa_str, err_str = parse_date_value(masa_str_raw, 'masa_berlaku_str')
             if err_str:
                 row_errors.append(err_str)
-            masa_sip, err_sip = parse_date(masa_berlaku_sip_raw, 'masa_berlaku_sip')
+
+            masa_sip, err_sip = parse_date_value(masa_sip_raw, 'masa_berlaku_sip')
             if err_sip:
                 row_errors.append(err_sip)
 
@@ -377,34 +575,53 @@ def upload_bulk(request):
                 errors.append(f'Baris {row_num}: {", ".join(row_errors)}')
                 continue
 
+            if no_str in seen_str:
+                errors.append(f'Baris {row_num}: no_str "{no_str}" duplikat di dalam file, dilewati')
+                continue
+            seen_str.add(no_str)
+
+            if no_sip in seen_sip:
+                errors.append(f'Baris {row_num}: no_sip "{no_sip}" duplikat di dalam file, dilewati')
+                continue
+            seen_sip.add(no_sip)
+
             if Nakes.objects.filter(no_str=no_str).exists():
-                errors.append(f'Baris {row_num}: no_str "{no_str}" sudah ada, dilewati')
+                errors.append(f'Baris {row_num}: no_str "{no_str}" sudah ada di sistem, dilewati')
                 continue
             if Nakes.objects.filter(no_sip=no_sip).exists():
-                errors.append(f'Baris {row_num}: no_sip "{no_sip}" sudah ada, dilewati')
+                errors.append(f'Baris {row_num}: no_sip "{no_sip}" sudah ada di sistem, dilewati')
                 continue
 
-            nakes = Nakes.objects.create(
-                nama=nama,
-                profesi=profesi,
-                unit_kerja=unit_kerja,
-                no_str=no_str,
-                masa_berlaku_str=masa_str,
-                no_sip=no_sip,
-                masa_berlaku_sip=masa_sip,
-                status_kredensial=status_kredensial,
-                kewenangan_klinis=kewenangan_klinis,
-                catatan=catatan,
-                created_by=request.user,
-            )
-            log_audit(request.user, 'CREATE', nakes, detail='Import bulk Excel')
-            sukses += 1
+            try:
+                with transaction.atomic():
+                    nakes = Nakes.objects.create(
+                        nama=nama,
+                        profesi=profesi_norm,
+                        unit_kerja=unit_kerja,
+                        no_str=no_str,
+                        masa_berlaku_str=masa_str,
+                        no_sip=no_sip,
+                        masa_berlaku_sip=masa_sip,
+                        status_kredensial=status_norm,
+                        kewenangan_klinis=kewenangan_norm,
+                        catatan=catatan,
+                        created_by=request.user,
+                    )
+                    log_audit(request.user, 'CREATE', nakes, detail='Import bulk Excel')
+                    sukses += 1
+            except Exception as ex:
+                errors.append(f'Baris {row_num}: Gagal simpan ke database ({str(ex)})')
 
         if sukses:
             messages.success(request, f'{sukses} data berhasil diimport.')
         if errors:
-            for e in errors:
-                messages.warning(request, e)
+            if len(errors) > 5:
+                for e in errors[:5]:
+                    messages.warning(request, e)
+                messages.warning(request, f'... dan {len(errors) - 5} baris lainnya bermasalah atau dilewati.')
+            else:
+                for e in errors:
+                    messages.warning(request, e)
         if not sukses and not errors:
             messages.info(request, 'Tidak ada data yang diproses. File mungkin kosong.')
 
@@ -454,7 +671,11 @@ def dokumen_umum_create(request):
             doc.save()
             log_audit(request.user, 'CREATE', doc, detail=f'Upload dokumen umum: {doc.judul}')
             messages.success(request, f'Dokumen "{doc.judul}" berhasil diupload.')
-            return redirect('nakes:dokumen_hub')
+            return redirect(f"{reverse('nakes:dokumen_hub')}?tab=umum")
+        else:
+            for field, errs in form.errors.items():
+                for err in errs:
+                    messages.error(request, f'Gagal upload dokumen: {err}')
     else:
         form = DokumenUmumForm()
     return render(request, 'nakes/dokumen_umum_form.html', {'form': form, 'title': 'Upload Dokumen Umum'})
@@ -470,10 +691,27 @@ def dokumen_umum_edit(request, pk):
             doc = form.save()
             log_audit(request.user, 'UPDATE', doc, detail=f'Field diubah: {", ".join(changed)}')
             messages.success(request, f'Dokumen "{doc.judul}" berhasil diperbarui.')
-            return redirect('nakes:dokumen_hub')
+            return redirect(f"{reverse('nakes:dokumen_hub')}?tab=umum")
+        else:
+            for field, errs in form.errors.items():
+                for err in errs:
+                    messages.error(request, f'Gagal memperbarui dokumen: {err}')
     else:
         form = DokumenUmumForm(instance=doc)
     return render(request, 'nakes/dokumen_umum_form.html', {'form': form, 'title': f'Edit - {doc.judul}'})
+
+
+@login_required
+def dokumen_umum_download(request, pk):
+    doc = get_object_or_404(DokumenUmum, pk=pk)
+    if not doc.file:
+        messages.error(request, 'File dokumen tidak ditemukan.')
+        return redirect(f"{reverse('nakes:dokumen_hub')}?tab=umum")
+    try:
+        return FileResponse(doc.file.open('rb'))
+    except (FileNotFoundError, ValueError):
+        messages.error(request, 'File fisik tidak ditemukan pada server penyimpanan.')
+        return redirect(f"{reverse('nakes:dokumen_hub')}?tab=umum")
 
 
 @login_required
@@ -481,7 +719,12 @@ def dokumen_umum_delete(request, pk):
     doc = get_object_or_404(DokumenUmum, pk=pk)
     if request.method == 'POST':
         log_audit(request.user, 'DELETE', doc)
-        doc.file.delete(save=False)
+        try:
+            if doc.file:
+                doc.file.close()
+                doc.file.delete(save=False)
+        except Exception:
+            pass
         doc.delete()
         messages.success(request, 'Dokumen berhasil dihapus.')
-    return redirect('nakes:dokumen_hub')
+    return redirect(f"{reverse('nakes:dokumen_hub')}?tab=umum")

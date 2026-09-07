@@ -67,9 +67,11 @@
                         <td style="color:var(--text-muted);">{{ d.uploaded_at|date:"d M Y H:i" }}</td>
                         <td style="color:var(--text-secondary);">{{ d.uploaded_by|default:"-" }}</td>
                         <td>
-                            <a href="{{ d.file.url }}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank">
+                            {% if d.file %}
+                            <a href="{% url 'nakes:dokumen_download' d.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank">
                                 <i class="bi bi-download"></i>
                             </a>
+                            {% endif %}
                         </td>
                     </tr>
                     {% empty %}
@@ -104,9 +106,11 @@
                     </div>
                     <div style="color:var(--text-muted);font-size:0.72rem;margin-top:0.25rem;">{{ d.uploaded_at|date:"d M Y H:i" }}</div>
                 </div>
-                <a href="{{ d.file.url }}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank">
+                {% if d.file %}
+                <a href="{% url 'nakes:dokumen_download' d.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank">
                     <i class="bi bi-download"></i>
                 </a>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -170,9 +174,11 @@
                         <td style="color:var(--text-muted);">{{ d.uploaded_at|date:"d M Y H:i" }}</td>
                         <td style="color:var(--text-secondary);">{{ d.uploaded_by|default:"-" }}</td>
                         <td class="text-end" style="white-space:nowrap;">
-                            <a href="{{ d.file.url }}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank" title="Download">
+                            {% if d.file %}
+                            <a href="{% url 'nakes:dokumen_umum_download' d.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank" title="Download">
                                 <i class="bi bi-download"></i>
                             </a>
+                            {% endif %}
                             <a href="{% url 'nakes:dokumen_umum_edit' d.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </a>
@@ -215,7 +221,9 @@
                     </div>
                 </div>
                 <div class="d-flex gap-1">
-                    <a href="{{ d.file.url }}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank"><i class="bi bi-download"></i></a>
+                    {% if d.file %}
+                    <a href="{% url 'nakes:dokumen_umum_download' d.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" target="_blank"><i class="bi bi-download"></i></a>
+                    {% endif %}
                     <a href="{% url 'nakes:dokumen_umum_edit' d.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;"><i class="bi bi-pencil"></i></a>
                 </div>
             </div>

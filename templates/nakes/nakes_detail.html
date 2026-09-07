@@ -128,8 +128,12 @@
                     <div class="d-flex justify-content-between align-items-center py-2 {% if not forloop.last %}border-bottom{% endif %}" style="border-color:var(--border) !important;">
                         <div style="font-size:0.8rem;">
                             <span class="badge badge-status-neutral me-1">{{ d.jenis }}</span>
-                            <a href="{{ d.file.url }}" target="_blank" style="text-decoration:none;">{{ d.nama_file }}</a>
-                            <div style="color:var(--text-muted);font-size:0.7rem;">{{ d.uploaded_at|date:"d/m/Y H:i" }}</div>
+                            {% if d.file %}
+                            <a href="{% url 'nakes:dokumen_download' d.pk %}" target="_blank" style="text-decoration:none;">{{ d.nama_file }}</a>
+                            {% else %}
+                            <span>{{ d.nama_file }}</span>
+                            {% endif %}
+                            <div style="color:var(--text-muted);font-size:0.7rem;">{{ d.uploaded_at|date:"d/m/Y H:i" }} {% if d.file %}&middot; {{ d.file_size_display }}{% endif %}</div>
                         </div>
                         <form method="post" action="{% url 'nakes:dokumen_delete' d.pk %}" onsubmit="return confirm('Hapus dokumen ini?')">
                             {% csrf_token %}
@@ -157,10 +161,10 @@
                         </select>
                     </div>
                     <div class="mb-2">
-                        <input type="text" name="nama_file" class="form-control form-control-sm" placeholder="Nama dokumen" required>
+                        <input type="text" name="nama_file" class="form-control form-control-sm" placeholder="Nama dokumen (opsional)">
                     </div>
                     <div class="mb-2">
-                        <input type="file" name="file" class="form-control form-control-sm" required>
+                        <input type="file" name="file" class="form-control form-control-sm" accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx" required>
                     </div>
                     <button type="submit" class="btn btn-primary btn-sm w-100">Upload</button>
                 </form>
