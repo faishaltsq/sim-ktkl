@@ -825,11 +825,9 @@ def oppe_create(request):
         }
         form = EvaluasiOPPEForm(initial=initial)
 
-    indikator_sections = EvaluasiOPPE.INDIKATOR_LABELS
     return render(request, 'nakes/oppe_form.html', {
         'form': form,
         'title': 'Tambah Evaluasi OPPE',
-        'indikator_sections': indikator_sections,
     })
 
 
@@ -852,11 +850,9 @@ def oppe_update(request, pk):
     else:
         form = EvaluasiOPPEForm(instance=oppe)
 
-    indikator_sections = EvaluasiOPPE.INDIKATOR_LABELS
     return render(request, 'nakes/oppe_form.html', {
         'form': form,
         'title': f'Edit Evaluasi OPPE - {oppe.nakes.nama}',
-        'indikator_sections': indikator_sections,
         'oppe': oppe,
     })
 

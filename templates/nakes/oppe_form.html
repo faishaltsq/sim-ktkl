@@ -27,35 +27,28 @@
                 </div>
             </div>
 
-            {% for section_key, section_title, labels in indikator_sections %}
+            {% for section_title, items in form.get_sections %}
             <h6 class="fw-bold mt-4 mb-3" style="color:var(--primary);border-bottom:2px solid var(--primary-light);padding-bottom:0.5rem;">
                 {{ section_title }}
             </h6>
             <table class="table table-sm mb-3" style="font-size:0.82rem;">
                 <thead>
                     <tr>
-                        <th style="width:40px;">No</th>
+                        <th style="width:40px;" class="text-center">No</th>
                         <th>Parameter / Indikator Penilaian</th>
-                        <th style="width:100px;" class="text-center">Skor (0-100)</th>
+                        <th style="width:110px;" class="text-center">Skor (0-100)</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {% for label in labels %}
-                    {% with idx=forloop.counter %}
-                    {% with field_name="skor_"|add:section_key|add:"_"|add:idx|stringformat:"s" %}
+                    {% for no, label, field in items %}
                     <tr>
-                        <td class="text-center" style="vertical-align:middle;">
-                            {% if section_key == "perilaku" %}{{ idx }}{% elif section_key == "profesional" %}{{ idx|add:7 }}{% else %}{{ idx|add:11 }}{% endif %}
-                        </td>
+                        <td class="text-center" style="vertical-align:middle;">{{ no }}</td>
                         <td style="vertical-align:middle;">{{ label }}</td>
                         <td>
-                            {% for f in form %}
-                            {% if f.name == field_name %}{{ f }}{% endif %}
-                            {% endfor %}
+                            {{ field }}
+                            {% if field.errors %}<div class="text-danger" style="font-size:0.75rem;">{{ field.errors.0 }}</div>{% endif %}
                         </td>
                     </tr>
-                    {% endwith %}
-                    {% endwith %}
                     {% endfor %}
                 </tbody>
             </table>
@@ -136,7 +129,10 @@ document.addEventListener('DOMContentLoaded', function() {
         gradeEl.style.color = color;
     }
 
-    inputs.forEach(i => i.addEventListener('input', calc));
+    inputs.forEach(i => {
+        i.addEventListener('input', calc);
+        i.addEventListener('focus', function() { this.select(); });
+    });
     calc();
 });
 </script>

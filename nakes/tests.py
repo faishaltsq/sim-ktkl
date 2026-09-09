@@ -395,6 +395,19 @@ class OPPETest(TestCase):
         self.assertEqual(oppe.grade, 'B')
         self.assertEqual(oppe.grade_display, 'Baik')
 
+    def test_oppe_form_renders_all_20_score_inputs(self):
+        url_create = reverse('nakes:oppe_create')
+        res = self.client.get(url_create)
+        self.assertEqual(res.status_code, 200)
+        content = res.content.decode('utf-8')
+        for i in range(1, 8):
+            self.assertIn(f'name="skor_perilaku_{i}"', content)
+        for i in range(1, 5):
+            self.assertIn(f'name="skor_profesional_{i}"', content)
+        for i in range(1, 10):
+            self.assertIn(f'name="skor_kinerja_{i}"', content)
+        self.assertEqual(content.count('skor-input'), 21)  # 20 inputs + 1 in js querySelector
+
     def test_oppe_crud_flow(self):
         url_create = reverse('nakes:oppe_create')
         data = {

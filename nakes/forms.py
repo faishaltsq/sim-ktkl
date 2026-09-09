@@ -175,6 +175,17 @@ class EvaluasiOPPEForm(forms.ModelForm):
             'pegawai_nip': forms.TextInput(attrs={'class': 'form-control'}),
         }
 
+    def get_sections(self):
+        sections = []
+        counter = 1
+        for sec_key, sec_title, labels in EvaluasiOPPE.INDIKATOR_LABELS:
+            items = []
+            for idx, label in enumerate(labels, start=1):
+                items.append((counter, label, self[f'skor_{sec_key}_{idx}']))
+                counter += 1
+            sections.append((sec_title, items))
+        return sections
+
 
 class EvaluasiMutuKlinisForm(forms.ModelForm):
     class Meta:
