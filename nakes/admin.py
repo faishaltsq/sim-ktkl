@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi
+from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi, EvaluasiOPPE, EvaluasiMutuKlinis
 
 
 @admin.register(Profesi)
@@ -37,3 +37,18 @@ class DokumenUmumAdmin(admin.ModelAdmin):
     list_display = ['judul', 'kategori', 'uploaded_at', 'uploaded_by']
     list_filter = ['kategori']
     search_fields = ['judul', 'deskripsi']
+
+
+@admin.register(EvaluasiOPPE)
+class EvaluasiOPPEAdmin(admin.ModelAdmin):
+    list_display = ['nakes', 'tahun', 'tanggal_evaluasi', 'total_nilai', 'poin_penilaian', 'grade']
+    list_filter = ['grade', 'tahun']
+    search_fields = ['nakes__nama']
+    readonly_fields = ['total_nilai', 'poin_penilaian', 'grade']
+
+
+@admin.register(EvaluasiMutuKlinis)
+class EvaluasiMutuKlinisAdmin(admin.ModelAdmin):
+    list_display = ['nama_indikator', 'unit_kerja', 'periode_bulan', 'periode_tahun', 'standar_target', 'capaian']
+    list_filter = ['periode_tahun', 'periode_bulan', 'unit_kerja']
+    search_fields = ['nama_indikator', 'unit_kerja']

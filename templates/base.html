@@ -381,6 +381,19 @@
                         </a>
                     </li>
                 </ul>
+                <div class="nav-section mt-2">Sub Mutu &amp; Profesi</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'oppe_list' or request.resolver_match.url_name == 'oppe_create' or request.resolver_match.url_name == 'oppe_detail' or request.resolver_match.url_name == 'oppe_update' %}active{% endif %}" href="{% url 'nakes:oppe_list' %}">
+                            <i class="bi bi-clipboard-check"></i> OPPE Nakes
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'mutu_list' or request.resolver_match.url_name == 'mutu_create' or request.resolver_match.url_name == 'mutu_detail' or request.resolver_match.url_name == 'mutu_update' %}active{% endif %}" href="{% url 'nakes:mutu_list' %}">
+                            <i class="bi bi-graph-up-arrow"></i> Mutu Layanan Klinis
+                        </a>
+                    </li>
+                </ul>
                 <div class="nav-section mt-2">Laporan</div>
                 <ul class="nav flex-column">
                     <li class="nav-item">
@@ -446,6 +459,19 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'dokumen_hub' %}active{% endif %}" href="{% url 'nakes:dokumen_hub' %}">
                         <i class="bi bi-folder2-open"></i> Dokumen
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-section mt-2">Sub Mutu &amp; Profesi</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'oppe_list' or request.resolver_match.url_name == 'oppe_create' or request.resolver_match.url_name == 'oppe_detail' or request.resolver_match.url_name == 'oppe_update' %}active{% endif %}" href="{% url 'nakes:oppe_list' %}">
+                        <i class="bi bi-clipboard-check"></i> OPPE Nakes
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'mutu_list' or request.resolver_match.url_name == 'mutu_create' or request.resolver_match.url_name == 'mutu_detail' or request.resolver_match.url_name == 'mutu_update' %}active{% endif %}" href="{% url 'nakes:mutu_list' %}">
+                        <i class="bi bi-graph-up-arrow"></i> Mutu Layanan Klinis
                     </a>
                 </li>
             </ul>

@@ -13,8 +13,8 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.datetime import from_excel
 from openpyxl.worksheet.datavalidation import DataValidation
 
-from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi
-from .forms import NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm
+from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi, EvaluasiOPPE, EvaluasiMutuKlinis
+from .forms import NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm, EvaluasiOPPEForm, EvaluasiMutuKlinisForm
 
 
 HEADER_MAP = {
@@ -775,3 +775,195 @@ def dokumen_umum_delete(request, pk):
         doc.delete()
         messages.success(request, 'Dokumen berhasil dihapus.')
     return redirect(f"{reverse('nakes:dokumen_hub')}?tab=umum")
+
+
+# ==========================================
+# SUB MUTU & PENGEMBANGAN PROFESI: OPPE
+# ==========================================
+
+@login_required
+def oppe_list(request):
+    qs = EvaluasiOPPE.objects.select_related('nakes', 'nakes__profesi').all()
+    q = request.GET.get('q', '').strip()
+    tahun = request.GET.get('tahun', '').strip()
+    grade = request.GET.get('grade', '').strip()
+
+    if q:
+        qs = qs.filter(Q(nakes__nama__icontains=q) | Q(nakes__unit_kerja__icontains=q))
+    if tahun:
+        qs = qs.filter(tahun=tahun)
+    if grade:
+        qs = qs.filter(grade=grade)
+
+    years = EvaluasiOPPE.objects.values_list('tahun', flat=True).distinct().order_by('-tahun')
+
+    context = {
+        'oppe_list': qs,
+        'q': q,
+        'tahun': tahun,
+        'grade': grade,
+        'years': years,
+    }
+    return render(request, 'nakes/oppe_list.html', context)
+
+
+@login_required
+def oppe_create(request):
+    if request.method == 'POST':
+        form = EvaluasiOPPEForm(request.POST)
+        if form.is_valid():
+            oppe = form.save(commit=False)
+            oppe.created_by = request.user
+            oppe.save()
+            log_audit(request.user, 'CREATE', oppe, detail=f'Penilaian OPPE {oppe.nakes.nama} ({oppe.tahun}) Grade: {oppe.grade}')
+            messages.success(request, f'Evaluasi OPPE {oppe.nakes.nama} tahun {oppe.tahun} berhasil disimpan.')
+            return redirect('nakes:oppe_detail', pk=oppe.pk)
+    else:
+        initial = {
+            'tahun': date.today().year,
+            'tanggal_evaluasi': date.today(),
+        }
+        form = EvaluasiOPPEForm(initial=initial)
+
+    indikator_sections = EvaluasiOPPE.INDIKATOR_LABELS
+    return render(request, 'nakes/oppe_form.html', {
+        'form': form,
+        'title': 'Tambah Evaluasi OPPE',
+        'indikator_sections': indikator_sections,
+    })
+
+
+@login_required
+def oppe_detail(request, pk):
+    oppe = get_object_or_404(EvaluasiOPPE.objects.select_related('nakes', 'nakes__profesi'), pk=pk)
+    return render(request, 'nakes/oppe_print.html', {'oppe': oppe})
+
+
+@login_required
+def oppe_update(request, pk):
+    oppe = get_object_or_404(EvaluasiOPPE, pk=pk)
+    if request.method == 'POST':
+        form = EvaluasiOPPEForm(request.POST, instance=oppe)
+        if form.is_valid():
+            oppe = form.save()
+            log_audit(request.user, 'UPDATE', oppe, detail=f'Update OPPE {oppe.nakes.nama} ({oppe.tahun}) Grade: {oppe.grade}')
+            messages.success(request, f'Evaluasi OPPE {oppe.nakes.nama} tahun {oppe.tahun} berhasil diperbarui.')
+            return redirect('nakes:oppe_detail', pk=oppe.pk)
+    else:
+        form = EvaluasiOPPEForm(instance=oppe)
+
+    indikator_sections = EvaluasiOPPE.INDIKATOR_LABELS
+    return render(request, 'nakes/oppe_form.html', {
+        'form': form,
+        'title': f'Edit Evaluasi OPPE - {oppe.nakes.nama}',
+        'indikator_sections': indikator_sections,
+        'oppe': oppe,
+    })
+
+
+@login_required
+def oppe_delete(request, pk):
+    oppe = get_object_or_404(EvaluasiOPPE, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', oppe, detail=f'Hapus OPPE {oppe.nakes.nama} ({oppe.tahun})')
+        oppe.delete()
+        messages.success(request, 'Evaluasi OPPE berhasil dihapus.')
+    return redirect('nakes:oppe_list')
+
+
+# ==========================================
+# SUB MUTU: EVALUASI MUTU LAYANAN KLINIS
+# ==========================================
+
+@login_required
+def mutu_list(request):
+    qs = EvaluasiMutuKlinis.objects.all()
+    q = request.GET.get('q', '').strip()
+    unit = request.GET.get('unit', '').strip()
+    tahun = request.GET.get('tahun', '').strip()
+    bulan = request.GET.get('bulan', '').strip()
+
+    if q:
+        qs = qs.filter(Q(nama_indikator__icontains=q) | Q(unit_kerja__icontains=q))
+    if unit:
+        qs = qs.filter(unit_kerja=unit)
+    if tahun:
+        qs = qs.filter(periode_tahun=tahun)
+    if bulan:
+        qs = qs.filter(periode_bulan=bulan)
+
+    units = EvaluasiMutuKlinis.objects.values_list('unit_kerja', flat=True).distinct().order_by('unit_kerja')
+    years = EvaluasiMutuKlinis.objects.values_list('periode_tahun', flat=True).distinct().order_by('-periode_tahun')
+
+    total_count = qs.count()
+    tercapai_count = sum(1 for m in qs if m.is_tercapai)
+    belum_tercapai_count = total_count - tercapai_count
+
+    context = {
+        'mutu_list': qs,
+        'q': q,
+        'unit': unit,
+        'tahun': tahun,
+        'bulan': bulan,
+        'units': units,
+        'years': years,
+        'bulan_choices': EvaluasiMutuKlinis.BULAN_CHOICES,
+        'total_count': total_count,
+        'tercapai_count': tercapai_count,
+        'belum_tercapai_count': belum_tercapai_count,
+    }
+    return render(request, 'nakes/mutu_list.html', context)
+
+
+@login_required
+def mutu_create(request):
+    if request.method == 'POST':
+        form = EvaluasiMutuKlinisForm(request.POST)
+        if form.is_valid():
+            mutu = form.save(commit=False)
+            mutu.created_by = request.user
+            mutu.save()
+            log_audit(request.user, 'CREATE', mutu, detail=f'Indikator Mutu: {mutu.nama_indikator} ({mutu.unit_kerja})')
+            messages.success(request, f'Indikator Mutu "{mutu.nama_indikator}" berhasil ditambahkan.')
+            return redirect('nakes:mutu_detail', pk=mutu.pk)
+    else:
+        initial = {
+            'periode_tahun': date.today().year,
+            'periode_bulan': date.today().month,
+            'standar_target': 100.0,
+        }
+        form = EvaluasiMutuKlinisForm(initial=initial)
+
+    return render(request, 'nakes/mutu_form.html', {'form': form, 'title': 'Tambah Indikator Mutu Klinis'})
+
+
+@login_required
+def mutu_detail(request, pk):
+    mutu = get_object_or_404(EvaluasiMutuKlinis, pk=pk)
+    return render(request, 'nakes/mutu_detail.html', {'mutu': mutu})
+
+
+@login_required
+def mutu_update(request, pk):
+    mutu = get_object_or_404(EvaluasiMutuKlinis, pk=pk)
+    if request.method == 'POST':
+        form = EvaluasiMutuKlinisForm(request.POST, instance=mutu)
+        if form.is_valid():
+            mutu = form.save()
+            log_audit(request.user, 'UPDATE', mutu, detail=f'Update Indikator Mutu: {mutu.nama_indikator}')
+            messages.success(request, f'Indikator Mutu "{mutu.nama_indikator}" berhasil diperbarui.')
+            return redirect('nakes:mutu_detail', pk=mutu.pk)
+    else:
+        form = EvaluasiMutuKlinisForm(instance=mutu)
+
+    return render(request, 'nakes/mutu_form.html', {'form': form, 'title': f'Edit - {mutu.nama_indikator}'})
+
+
+@login_required
+def mutu_delete(request, pk):
+    mutu = get_object_or_404(EvaluasiMutuKlinis, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', mutu, detail=f'Hapus Mutu: {mutu.nama_indikator}')
+        mutu.delete()
+        messages.success(request, 'Indikator mutu klinis berhasil dihapus.')
+    return redirect('nakes:mutu_list')

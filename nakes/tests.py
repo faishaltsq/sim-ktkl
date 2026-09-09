@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 import openpyxl
 
-from .models import Nakes, AuditLog, Profesi, DokumenNakes, DokumenUmum
+from .models import Nakes, AuditLog, Profesi, DokumenNakes, DokumenUmum, EvaluasiOPPE, EvaluasiMutuKlinis
 
 
 class ExcelImportQATest(TestCase):
@@ -357,3 +357,130 @@ class DokumenUploadQATest(TestCase):
         self.assertEqual(res_del.status_code, 302)
         self.assertIn('tab=umum', res_del.url)
         self.assertFalse(DokumenUmum.objects.filter(pk=doc.pk).exists())
+
+
+class OPPETest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='oppeuser', password='password123')
+        self.client = Client()
+        self.client.login(username='oppeuser', password='password123')
+        p, _ = Profesi.objects.get_or_create(nama='ATLM')
+        self.nakes = Nakes.objects.create(
+            nama='Dewi OPPE',
+            profesi=p,
+            unit_kerja='Laboratorium',
+            no_str='STR-OPPE-001',
+            masa_berlaku_str=datetime.date(2028, 1, 1),
+            no_sip='SIP-OPPE-001',
+            masa_berlaku_sip=datetime.date(2028, 1, 1),
+            created_by=self.user,
+        )
+
+    def test_oppe_calculation_and_grade(self):
+        # 20 indicators * 85 = 1700 total -> poin 85.00 -> Grade B
+        oppe = EvaluasiOPPE.objects.create(
+            nakes=self.nakes,
+            tahun=2025,
+            tanggal_evaluasi=datetime.date(2025, 6, 1),
+            skor_perilaku_1=85, skor_perilaku_2=85, skor_perilaku_3=85, skor_perilaku_4=85,
+            skor_perilaku_5=85, skor_perilaku_6=85, skor_perilaku_7=85,
+            skor_profesional_1=85, skor_profesional_2=85, skor_profesional_3=85, skor_profesional_4=85,
+            skor_kinerja_1=85, skor_kinerja_2=85, skor_kinerja_3=85, skor_kinerja_4=85,
+            skor_kinerja_5=85, skor_kinerja_6=85, skor_kinerja_7=85, skor_kinerja_8=85, skor_kinerja_9=85,
+            penilai_nama='apt. Mariah Ulfah',
+            created_by=self.user,
+        )
+        self.assertEqual(oppe.total_nilai, 1700)
+        self.assertEqual(oppe.poin_penilaian, 85.0)
+        self.assertEqual(oppe.grade, 'B')
+        self.assertEqual(oppe.grade_display, 'Baik')
+
+    def test_oppe_crud_flow(self):
+        url_create = reverse('nakes:oppe_create')
+        data = {
+            'nakes': self.nakes.pk,
+            'tahun': 2025,
+            'tanggal_evaluasi': '2025-05-10',
+            'penilai_nama': 'apt. Mariah Ulfah, S.Farm',
+            'penilai_nip': '390.05.11.1',
+        }
+        for i in range(1, 8):
+            data[f'skor_perilaku_{i}'] = 70
+        for i in range(1, 5):
+            data[f'skor_profesional_{i}'] = 70
+        for i in range(1, 10):
+            data[f'skor_kinerja_{i}'] = 70
+
+        # Create (Total 1400 -> Poin 70.0 -> Grade C)
+        res_create = self.client.post(url_create, data)
+        self.assertEqual(res_create.status_code, 302)
+        oppe = EvaluasiOPPE.objects.get(nakes=self.nakes, tahun=2025)
+        self.assertEqual(oppe.grade, 'C')
+
+        # Detail print view
+        url_detail = reverse('nakes:oppe_detail', args=[oppe.pk])
+        res_detail = self.client.get(url_detail)
+        self.assertEqual(res_detail.status_code, 200)
+        self.assertContains(res_detail, 'RS PKU MUHAMMADIYAH GOMBONG')
+        self.assertContains(res_detail, 'apt. Mariah Ulfah, S.Farm')
+
+        # Update
+        data['skor_kinerja_1'] = 90
+        url_update = reverse('nakes:oppe_update', args=[oppe.pk])
+        res_update = self.client.post(url_update, data)
+        self.assertEqual(res_update.status_code, 302)
+        oppe.refresh_from_db()
+        self.assertEqual(oppe.total_nilai, 1420)
+        self.assertEqual(oppe.poin_penilaian, 71.0)
+
+        # Delete
+        url_del = reverse('nakes:oppe_delete', args=[oppe.pk])
+        res_del = self.client.post(url_del)
+        self.assertEqual(res_del.status_code, 302)
+        self.assertFalse(EvaluasiOPPE.objects.filter(pk=oppe.pk).exists())
+
+
+class MutuKlinisTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='mutuuser', password='password123')
+        self.client = Client()
+        self.client.login(username='mutuuser', password='password123')
+
+    def test_mutu_crud_and_status(self):
+        url_create = reverse('nakes:mutu_create')
+        data = {
+            'unit_kerja': 'Instalasi Laboratorium',
+            'periode_bulan': 5,
+            'periode_tahun': 2025,
+            'nama_indikator': 'Kepatuhan Pelaporan Nilai Kritis Lab',
+            'standar_target': '100.00',
+            'capaian': '96.50',
+            'analisis': 'Keterlambatan konfirmasi dokter DPJP',
+            'rencana_tindak_lanjut': 'Sosialisasi alur pelaporan kritis via WhatsApp',
+            'penanggung_jawab': 'dr. Sp.PK',
+        }
+        res_create = self.client.post(url_create, data)
+        self.assertEqual(res_create.status_code, 302)
+        mutu = EvaluasiMutuKlinis.objects.get(nama_indikator='Kepatuhan Pelaporan Nilai Kritis Lab')
+        self.assertFalse(mutu.is_tercapai)
+
+        # Detail view
+        url_detail = reverse('nakes:mutu_detail', args=[mutu.pk])
+        res_detail = self.client.get(url_detail)
+        self.assertEqual(res_detail.status_code, 200)
+        self.assertContains(res_detail, 'Kepatuhan Pelaporan Nilai Kritis Lab')
+
+        # Update capaian to 100% (tercapai)
+        data['capaian'] = '100.00'
+        url_update = reverse('nakes:mutu_update', args=[mutu.pk])
+        res_update = self.client.post(url_update, data)
+        self.assertEqual(res_update.status_code, 302)
+        mutu.refresh_from_db()
+        self.assertTrue(mutu.is_tercapai)
+
+        # Delete
+        url_del = reverse('nakes:mutu_delete', args=[mutu.pk])
+        res_del = self.client.post(url_del)
+        self.assertEqual(res_del.status_code, 302)
+        self.assertFalse(EvaluasiMutuKlinis.objects.filter(pk=mutu.pk).exists())
+

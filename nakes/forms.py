@@ -1,7 +1,7 @@
 import os
 from django import forms
 from django.utils.safestring import mark_safe
-from .models import Nakes, DokumenNakes, DokumenUmum, Profesi
+from .models import Nakes, DokumenNakes, DokumenUmum, Profesi, EvaluasiOPPE, EvaluasiMutuKlinis
 
 ALLOWED_DOC_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx'}
 MAX_UPLOAD_SIZE = 15 * 1024 * 1024  # 15 MB
@@ -127,3 +127,71 @@ class DokumenUmumForm(forms.ModelForm):
             if file.size > MAX_UPLOAD_SIZE:
                 raise forms.ValidationError('Ukuran file maksimal 15 MB.')
         return file
+
+
+_skor_widget = {'class': 'form-control form-control-sm skor-input', 'type': 'number', 'min': '0', 'max': '100', 'step': '0.01'}
+
+
+class EvaluasiOPPEForm(forms.ModelForm):
+    class Meta:
+        model = EvaluasiOPPE
+        fields = [
+            'nakes', 'tahun', 'tanggal_evaluasi',
+            'skor_perilaku_1', 'skor_perilaku_2', 'skor_perilaku_3', 'skor_perilaku_4',
+            'skor_perilaku_5', 'skor_perilaku_6', 'skor_perilaku_7',
+            'skor_profesional_1', 'skor_profesional_2', 'skor_profesional_3', 'skor_profesional_4',
+            'skor_kinerja_1', 'skor_kinerja_2', 'skor_kinerja_3', 'skor_kinerja_4',
+            'skor_kinerja_5', 'skor_kinerja_6', 'skor_kinerja_7', 'skor_kinerja_8', 'skor_kinerja_9',
+            'penilai_nama', 'penilai_nip', 'mengetahui_nama', 'mengetahui_nip', 'pegawai_nip',
+        ]
+        widgets = {
+            'nakes': forms.Select(attrs={'class': 'form-select', 'id': 'id_nakes'}),
+            'tahun': forms.NumberInput(attrs={'class': 'form-control', 'min': '2000', 'max': '2100'}),
+            'tanggal_evaluasi': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'skor_perilaku_1': forms.NumberInput(attrs=_skor_widget),
+            'skor_perilaku_2': forms.NumberInput(attrs=_skor_widget),
+            'skor_perilaku_3': forms.NumberInput(attrs=_skor_widget),
+            'skor_perilaku_4': forms.NumberInput(attrs=_skor_widget),
+            'skor_perilaku_5': forms.NumberInput(attrs=_skor_widget),
+            'skor_perilaku_6': forms.NumberInput(attrs=_skor_widget),
+            'skor_perilaku_7': forms.NumberInput(attrs=_skor_widget),
+            'skor_profesional_1': forms.NumberInput(attrs=_skor_widget),
+            'skor_profesional_2': forms.NumberInput(attrs=_skor_widget),
+            'skor_profesional_3': forms.NumberInput(attrs=_skor_widget),
+            'skor_profesional_4': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_1': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_2': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_3': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_4': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_5': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_6': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_7': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_8': forms.NumberInput(attrs=_skor_widget),
+            'skor_kinerja_9': forms.NumberInput(attrs=_skor_widget),
+            'penilai_nama': forms.TextInput(attrs={'class': 'form-control'}),
+            'penilai_nip': forms.TextInput(attrs={'class': 'form-control'}),
+            'mengetahui_nama': forms.TextInput(attrs={'class': 'form-control'}),
+            'mengetahui_nip': forms.TextInput(attrs={'class': 'form-control'}),
+            'pegawai_nip': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class EvaluasiMutuKlinisForm(forms.ModelForm):
+    class Meta:
+        model = EvaluasiMutuKlinis
+        fields = [
+            'unit_kerja', 'periode_bulan', 'periode_tahun',
+            'nama_indikator', 'standar_target', 'capaian',
+            'analisis', 'rencana_tindak_lanjut', 'penanggung_jawab',
+        ]
+        widgets = {
+            'unit_kerja': forms.TextInput(attrs={'class': 'form-control'}),
+            'periode_bulan': forms.Select(attrs={'class': 'form-select'}),
+            'periode_tahun': forms.NumberInput(attrs={'class': 'form-control', 'min': '2000', 'max': '2100'}),
+            'nama_indikator': forms.TextInput(attrs={'class': 'form-control'}),
+            'standar_target': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '100', 'step': '0.01'}),
+            'capaian': forms.NumberInput(attrs={'class': 'form-control', 'min': '0', 'max': '100', 'step': '0.01'}),
+            'analisis': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'rencana_tindak_lanjut': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
+            'penanggung_jawab': forms.TextInput(attrs={'class': 'form-control'}),
+        }
