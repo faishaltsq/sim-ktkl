@@ -19,7 +19,7 @@
                 <div class="d-none d-md-block">
                     <table class="table mb-0" style="font-size:0.82rem;">
                         <tbody>
-                            <tr><td style="width:180px;color:var(--text-secondary);font-weight:500;">Profesi</td><td>{{ nakes.get_profesi_display }}</td></tr>
+                            <tr><td style="width:180px;color:var(--text-secondary);font-weight:500;">Profesi</td><td>{{ nakes.profesi.nama }}</td></tr>
                             <tr><td style="color:var(--text-secondary);font-weight:500;">Unit Kerja</td><td>{{ nakes.unit_kerja }}</td></tr>
                             <tr><td style="color:var(--text-secondary);font-weight:500;">Nomor STR</td><td><code>{{ nakes.no_str }}</code></td></tr>
                             <tr>
@@ -62,7 +62,7 @@
                 <div class="d-md-none p-3" style="font-size:0.82rem;">
                     <div class="mb-2">
                         <span style="color:var(--text-muted);font-size:0.72rem;display:block;">Profesi</span>
-                        <strong>{{ nakes.get_profesi_display }}</strong>
+                        <strong>{{ nakes.profesi.nama }}</strong>
                     </div>
                     <div class="mb-2">
                         <span style="color:var(--text-muted);font-size:0.72rem;display:block;">Unit Kerja</span>

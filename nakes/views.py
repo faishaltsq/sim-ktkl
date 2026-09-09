@@ -13,7 +13,7 @@ from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.datetime import from_excel
 from openpyxl.worksheet.datavalidation import DataValidation
 
-from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum
+from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi
 from .forms import NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm
 
 
@@ -155,7 +155,7 @@ def dashboard(request):
                     'doc': label,
                     'tanggal': exp,
                     'sisa': sisa,
-                    'msg': f'{n.nama} ({n.profesi}) - {label} sudah kedaluwarsa sejak {exp}',
+                     'msg': f'{n.nama} ({n.profesi.nama}) - {label} sudah kedaluwarsa sejak {exp}',
                 })
             elif sisa <= 180:
                 warnings.append({
@@ -164,7 +164,7 @@ def dashboard(request):
                     'doc': label,
                     'tanggal': exp,
                     'sisa': sisa,
-                    'msg': f'{n.nama} ({n.profesi}) - {label} akan habis pada {exp} ({sisa} hari lagi)',
+                    'msg': f'{n.nama} ({n.profesi.nama}) - {label} akan habis pada {exp} ({sisa} hari lagi)',
                 })
 
     warnings.sort(key=lambda x: x['sisa'])
@@ -181,10 +181,10 @@ def dashboard(request):
 @login_required
 def nakes_list(request):
     form = NakesSearchForm(request.GET)
-    qs = Nakes.objects.all()
+    qs = Nakes.objects.select_related('profesi').all()
     q = request.GET.get('q', '').strip()
     if q:
-        qs = qs.filter(Q(nama__icontains=q) | Q(profesi__icontains=q))
+        qs = qs.filter(Q(nama__icontains=q) | Q(profesi__nama__icontains=q))
     context = {'nakes_list': qs, 'form': form, 'q': q}
     return render(request, 'nakes/nakes_list.html', context)
 
@@ -316,16 +316,57 @@ def export_excel(request):
         'No SIP', 'Masa Berlaku SIP',
         'Status Kredensial', 'Kewenangan Klinis', 'Catatan',
     ]
-    ws.append(headers)
 
-    for n in Nakes.objects.all():
-        ws.append([
-            n.nama, n.profesi, n.unit_kerja,
+    header_fill = PatternFill(start_color='0C7C84', end_color='0C7C84', fill_type='solid')
+    header_font = Font(bold=True, color='FFFFFF', size=11)
+    center = Alignment(horizontal='center', vertical='center')
+    thin = Side(style='thin', color='CCCCCC')
+    border = Border(left=thin, right=thin, top=thin, bottom=thin)
+
+    for col, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=col, value=h)
+        cell.fill = header_fill
+        cell.font = header_font
+        cell.alignment = center
+        cell.border = border
+
+    ws.row_dimensions[1].height = 24
+
+    fill_red = PatternFill(start_color='FFCDD2', end_color='FFCDD2', fill_type='solid')
+    fill_yellow = PatternFill(start_color='FFF9C4', end_color='FFF9C4', fill_type='solid')
+    fill_green = PatternFill(start_color='C8E6C9', end_color='C8E6C9', fill_type='solid')
+
+    today = date.today()
+    for n in Nakes.objects.select_related('profesi').all():
+        row_data = [
+            n.nama, str(n.profesi), n.unit_kerja,
             n.no_str, n.masa_berlaku_str.isoformat(),
             n.no_sip, n.masa_berlaku_sip.isoformat(),
             n.status_kredensial, n.kewenangan_klinis,
             n.catatan,
-        ])
+        ]
+        ws.append(row_data)
+
+        sisa_str = (n.masa_berlaku_str - today).days
+        sisa_sip = (n.masa_berlaku_sip - today).days
+        worst = min(sisa_str, sisa_sip)
+
+        if worst < 0:
+            row_fill = fill_red
+        elif worst <= 180:
+            row_fill = fill_yellow
+        else:
+            row_fill = fill_green
+
+        row_idx = ws.max_row
+        for col in range(1, len(headers) + 1):
+            cell = ws.cell(row=row_idx, column=col)
+            cell.fill = row_fill
+            cell.border = border
+
+    col_widths = [25, 18, 20, 18, 18, 18, 18, 18, 16, 30]
+    for col, width in enumerate(col_widths, 1):
+        ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
@@ -368,9 +409,12 @@ def download_template(request):
         ws.cell(row=row_idx, column=7).number_format = 'yyyy-mm-dd'
 
     q = '"'
+    profesi_names = list(Profesi.objects.order_by('nama').values_list('nama', flat=True))
+    if not profesi_names:
+        profesi_names = ['ATLM', 'Radiografer', 'Fisioterapis', 'Nutrisionis', 'Perekam Medis', 'Apoteker', 'Sanitarian', 'Lainnya']
     dv_profesi = DataValidation(
         type='list',
-        formula1=f'{q}ATLM,Radiografer,Fisioterapis,Nutrisionis,Perekam Medis,Apoteker,Sanitarian,Lainnya{q}',
+        formula1=f'{q}{",".join(profesi_names)}{q}',
         allow_blank=True,
     )
     ws.add_data_validation(dv_profesi)
@@ -419,7 +463,7 @@ def download_template(request):
         ('', ''),
         ('Kolom', 'Keterangan'),
         ('nama', 'Nama lengkap tenaga kesehatan'),
-        ('profesi', 'Pilih: ATLM | Radiografer | Fisioterapis | Nutrisionis | Perekam Medis | Apoteker | Sanitarian | Lainnya'),
+        ('profesi', 'Nama profesi (sesuai dropdown atau ketik profesi baru)'),
         ('unit_kerja', 'Nama unit/departemen kerja'),
         ('no_str', 'Nomor STR (harus unik)'),
         ('masa_berlaku_str', 'Format: YYYY-MM-DD atau DD/MM/YYYY (contoh: 2026-12-31 atau 31/12/2026)'),
@@ -542,9 +586,12 @@ def upload_bulk(request):
             if not nama:
                 row_errors.append('nama kosong')
 
-            profesi_norm = PROFESI_MAP.get(clean_alphanumeric(profesi_raw))
-            if not profesi_norm:
-                row_errors.append(f'profesi tidak valid: "{profesi_raw}"')
+            if not profesi_raw:
+                row_errors.append('profesi kosong')
+                profesi_obj = None
+            else:
+                profesi_name = PROFESI_MAP.get(clean_alphanumeric(profesi_raw), profesi_raw.strip())
+                profesi_obj, _ = Profesi.objects.get_or_create(nama=profesi_name)
 
             if not unit_kerja:
                 row_errors.append('unit_kerja kosong')
@@ -596,7 +643,7 @@ def upload_bulk(request):
                 with transaction.atomic():
                     nakes = Nakes.objects.create(
                         nama=nama,
-                        profesi=profesi_norm,
+                        profesi=profesi_obj,
                         unit_kerja=unit_kerja,
                         no_str=no_str,
                         masa_berlaku_str=masa_str,

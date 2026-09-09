@@ -6,7 +6,7 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 import openpyxl
 
-from .models import Nakes, AuditLog
+from .models import Nakes, AuditLog, Profesi, DokumenNakes, DokumenUmum
 
 
 class ExcelImportQATest(TestCase):
@@ -14,6 +14,11 @@ class ExcelImportQATest(TestCase):
         self.user = User.objects.create_user(username='tester', password='password123')
         self.client = Client()
         self.client.login(username='tester', password='password123')
+        self.p_atlm, _ = Profesi.objects.get_or_create(nama='ATLM')
+        self.p_rad, _ = Profesi.objects.get_or_create(nama='Radiografer')
+        self.p_fis, _ = Profesi.objects.get_or_create(nama='Fisioterapis')
+        self.p_nut, _ = Profesi.objects.get_or_create(nama='Nutrisionis')
+        self.p_apo, _ = Profesi.objects.get_or_create(nama='Apoteker')
 
     def _create_excel_file(self, rows, sheet_name='Sheet1', headers=None):
         wb = openpyxl.Workbook()
@@ -40,7 +45,6 @@ class ExcelImportQATest(TestCase):
         self.assertEqual(wb.active.title, 'Template Import')
 
     def test_upload_with_active_sheet_panduan(self):
-        # User reads Panduan tab, saves, and Panduan becomes active sheet
         wb = openpyxl.Workbook()
         ws_data = wb.active
         ws_data.title = 'Template Import'
@@ -49,7 +53,7 @@ class ExcelImportQATest(TestCase):
 
         ws_guide = wb.create_sheet('Panduan')
         ws_guide['A1'] = 'PANDUAN IMPORT'
-        wb.active = ws_guide  # simulate saving while on Panduan tab
+        wb.active = ws_guide
 
         buf = io.BytesIO()
         wb.save(buf)
@@ -61,7 +65,6 @@ class ExcelImportQATest(TestCase):
         self.assertTrue(Nakes.objects.filter(no_str='STR-P1').exists())
 
     def test_upload_indonesian_date_formats(self):
-        # Users in Indonesia frequently use DD/MM/YYYY and DD-MM-YYYY
         headers = ['nama', 'profesi', 'unit_kerja', 'no_str', 'masa_berlaku_str', 'no_sip', 'masa_berlaku_sip', 'status_kredensial', 'kewenangan_klinis', 'catatan']
         rows = [
             ['Nakes Slash', 'ATLM', 'Lab', 'STR-DT-1', '31/12/2026', 'SIP-DT-1', '31/12/2026', 'Selesai', 'Aktif', ''],
@@ -82,7 +85,6 @@ class ExcelImportQATest(TestCase):
         self.assertIsInstance(n3.masa_berlaku_str, datetime.date)
 
     def test_upload_case_insensitive_enums(self):
-        # Case insensitivity for profesi and status
         headers = ['nama', 'profesi', 'unit_kerja', 'no_str', 'masa_berlaku_str', 'no_sip', 'masa_berlaku_sip', 'status_kredensial', 'kewenangan_klinis', 'catatan']
         rows = [
             ['Nakes Lower', 'atlm', 'Lab', 'STR-CI-1', '2026-12-31', 'SIP-CI-1', '2026-12-31', 'dalam proses', 'aktif', ''],
@@ -93,16 +95,28 @@ class ExcelImportQATest(TestCase):
         self.assertEqual(response.status_code, 200)
 
         n1 = Nakes.objects.get(no_str='STR-CI-1')
-        self.assertEqual(n1.profesi, 'ATLM')
+        self.assertEqual(n1.profesi.nama, 'ATLM')
         self.assertEqual(n1.status_kredensial, 'Dalam Proses')
         self.assertEqual(n1.kewenangan_klinis, 'Aktif')
 
         n2 = Nakes.objects.get(no_str='STR-CI-2')
-        self.assertEqual(n2.profesi, 'Fisioterapis')
+        self.assertEqual(n2.profesi.nama, 'Fisioterapis')
         self.assertEqual(n2.status_kredensial, 'Selesai')
 
+    def test_upload_custom_profesi_auto_created(self):
+        headers = ['nama', 'profesi', 'unit_kerja', 'no_str', 'masa_berlaku_str', 'no_sip', 'masa_berlaku_sip', 'status_kredensial', 'kewenangan_klinis', 'catatan']
+        rows = [
+            ['Bidan Sari', 'Bidan Delima', 'KIA', 'STR-BD-1', '2027-12-31', 'SIP-BD-1', '2027-12-31', 'Selesai', 'Aktif', ''],
+        ]
+        file = self._create_excel_file(rows, headers=headers)
+        response = self.client.post(reverse('nakes:upload_bulk'), {'excel_file': file}, follow=True)
+        self.assertEqual(response.status_code, 200)
+
+        self.assertTrue(Profesi.objects.filter(nama='Bidan Delima').exists())
+        n = Nakes.objects.get(no_str='STR-BD-1')
+        self.assertEqual(n.profesi.nama, 'Bidan Delima')
+
     def test_upload_human_friendly_headers(self):
-        # Headers with spaces / Indonesian casing
         headers = ['Nama', 'Profesi', 'Unit Kerja', 'No. STR', 'Masa Berlaku STR', 'No. SIP', 'Masa Berlaku SIP', 'Status Kredensial', 'Kewenangan Klinis', 'Catatan']
         rows = [
             ['Nakes Human', 'Nutrisionis', 'Gizi', 'STR-HF-1', '2026-12-31', 'SIP-HF-1', '2026-12-31', 'Selesai', 'Aktif', 'Test human header'],
@@ -113,7 +127,6 @@ class ExcelImportQATest(TestCase):
         self.assertTrue(Nakes.objects.filter(no_str='STR-HF-1').exists())
 
     def test_sample_rows_ignored(self):
-        # Official template sample rows are not created or treated as errors
         resp_template = self.client.get(reverse('nakes:download_template'))
         file = SimpleUploadedFile('template.xlsx', resp_template.content, content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
         response = self.client.post(reverse('nakes:upload_bulk'), {'excel_file': file}, follow=True)
@@ -123,7 +136,7 @@ class ExcelImportQATest(TestCase):
     def test_duplicate_handling(self):
         Nakes.objects.create(
             nama='Existing',
-            profesi='ATLM',
+            profesi=self.p_atlm,
             unit_kerja='Lab',
             no_str='STR-DUP-DB',
             masa_berlaku_str=datetime.date(2026, 12, 31),
@@ -143,14 +156,102 @@ class ExcelImportQATest(TestCase):
         self.assertEqual(Nakes.objects.filter(no_str='STR-UNIQ').count(), 1)
 
 
+class NakesFormAndExportTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='formuser', password='password123')
+        self.client = Client()
+        self.client.login(username='formuser', password='password123')
+
+    def test_create_custom_profesi_via_form(self):
+        url = reverse('nakes:create')
+        res = self.client.post(url, {
+            'nama': 'Dr. Sarah Spesialis',
+            'profesi': 'Dokter Spesialis Anak',
+            'unit_kerja': 'Poli Anak',
+            'no_str': 'STR-SARAH-01',
+            'masa_berlaku_str': '2028-01-01',
+            'no_sip': 'SIP-SARAH-01',
+            'masa_berlaku_sip': '2028-01-01',
+            'status_kredensial': 'Selesai',
+            'kewenangan_klinis': 'Aktif',
+            'catatan': '',
+        }, follow=True)
+        self.assertEqual(res.status_code, 200)
+
+        self.assertTrue(Profesi.objects.filter(nama='Dokter Spesialis Anak').exists())
+        nakes = Nakes.objects.get(no_str='STR-SARAH-01')
+        self.assertEqual(nakes.profesi.nama, 'Dokter Spesialis Anak')
+
+    def test_export_excel_header_and_row_colors(self):
+        today = datetime.date.today()
+        p, _ = Profesi.objects.get_or_create(nama='ATLM')
+
+        # 1. Expired (red)
+        Nakes.objects.create(
+            nama='Nakes Expired',
+            profesi=p,
+            unit_kerja='Lab',
+            no_str='STR-EXP',
+            masa_berlaku_str=today - datetime.timedelta(days=10),
+            no_sip='SIP-EXP',
+            masa_berlaku_sip=today + datetime.timedelta(days=300),
+            created_by=self.user,
+        )
+
+        # 2. Near expiry <= 180 days (yellow)
+        Nakes.objects.create(
+            nama='Nakes Warning',
+            profesi=p,
+            unit_kerja='Lab',
+            no_str='STR-WARN',
+            masa_berlaku_str=today + datetime.timedelta(days=60),
+            no_sip='SIP-WARN',
+            masa_berlaku_sip=today + datetime.timedelta(days=300),
+            created_by=self.user,
+        )
+
+        # 3. Safe > 180 days (green)
+        Nakes.objects.create(
+            nama='Nakes Safe',
+            profesi=p,
+            unit_kerja='Lab',
+            no_str='STR-SAFE',
+            masa_berlaku_str=today + datetime.timedelta(days=400),
+            no_sip='SIP-SAFE',
+            masa_berlaku_sip=today + datetime.timedelta(days=400),
+            created_by=self.user,
+        )
+
+        url = reverse('nakes:export')
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+
+        wb = openpyxl.load_workbook(io.BytesIO(res.content))
+        ws = wb.active
+
+        header_cell = ws.cell(row=1, column=1)
+        self.assertEqual(header_cell.fill.start_color.rgb, '000C7C84')
+
+        color_map = {}
+        for row_idx in range(2, ws.max_row + 1):
+            nama = ws.cell(row=row_idx, column=1).value
+            rgb = ws.cell(row=row_idx, column=1).fill.start_color.rgb
+            color_map[nama] = rgb
+
+        self.assertEqual(color_map['Nakes Expired'], '00FFCDD2')
+        self.assertEqual(color_map['Nakes Warning'], '00FFF9C4')
+        self.assertEqual(color_map['Nakes Safe'], '00C8E6C9')
+
+
 class DokumenUploadQATest(TestCase):
     def setUp(self):
         self.user = User.objects.create_user(username='docuser', password='password123')
         self.client = Client()
         self.client.login(username='docuser', password='password123')
+        p, _ = Profesi.objects.get_or_create(nama='ATLM')
         self.nakes = Nakes.objects.create(
             nama='Budi Test',
-            profesi='ATLM',
+            profesi=p,
             unit_kerja='Laboratorium',
             no_str='STR-DOC-001',
             masa_berlaku_str=datetime.date(2027, 1, 1),
@@ -172,7 +273,6 @@ class DokumenUploadQATest(TestCase):
         self.assertTrue(self.nakes.dokumen.filter(nama_file='STR Budi 2027').exists())
 
     def test_upload_dokumen_nakes_auto_filename(self):
-        # When nama_file is left blank, defaults to base filename
         pdf_content = b'%PDF-1.4 test pdf content'
         file = SimpleUploadedFile('sip_budi_terbaru.pdf', pdf_content, content_type='application/pdf')
         url = reverse('nakes:dokumen_upload', args=[self.nakes.pk])
@@ -185,7 +285,6 @@ class DokumenUploadQATest(TestCase):
         self.assertTrue(self.nakes.dokumen.filter(nama_file='sip_budi_terbaru').exists())
 
     def test_upload_dokumen_invalid_extension(self):
-        # Exe file should be rejected
         file = SimpleUploadedFile('malware.exe', b'bad content', content_type='application/octet-stream')
         url = reverse('nakes:dokumen_upload', args=[self.nakes.pk])
         response = self.client.post(url, {
@@ -198,7 +297,6 @@ class DokumenUploadQATest(TestCase):
         self.assertTrue(any('tidak didukung' in m for m in messages))
 
     def test_upload_dokumen_file_too_large(self):
-        # > 15MB file rejected
         large_content = b'0' * (16 * 1024 * 1024)
         file = SimpleUploadedFile('huge.pdf', large_content, content_type='application/pdf')
         url = reverse('nakes:dokumen_upload', args=[self.nakes.pk])
@@ -212,7 +310,6 @@ class DokumenUploadQATest(TestCase):
         self.assertTrue(any('maksimal 15 MB' in m for m in messages))
 
     def test_download_dokumen_nakes(self):
-        from .models import DokumenNakes
         file = SimpleUploadedFile('cert.pdf', b'%PDF test', content_type='application/pdf')
         doc = DokumenNakes.objects.create(
             nakes=self.nakes,
@@ -227,8 +324,6 @@ class DokumenUploadQATest(TestCase):
         response.close()
 
     def test_dokumen_umum_flow(self):
-        from .models import DokumenUmum
-        # 1. Create
         file = SimpleUploadedFile('sop_lab.pdf', b'%PDF test sop', content_type='application/pdf')
         url_create = reverse('nakes:dokumen_umum_create')
         res_create = self.client.post(url_create, {
@@ -241,13 +336,11 @@ class DokumenUploadQATest(TestCase):
         self.assertIn('tab=umum', res_create.url)
         doc = DokumenUmum.objects.get(judul='SOP Laboratorium')
 
-        # 2. Download
         url_dl = reverse('nakes:dokumen_umum_download', args=[doc.pk])
         res_dl = self.client.get(url_dl)
         self.assertEqual(res_dl.status_code, 200)
         res_dl.close()
 
-        # 3. Edit
         url_edit = reverse('nakes:dokumen_umum_edit', args=[doc.pk])
         res_edit = self.client.post(url_edit, {
             'judul': 'SOP Laboratorium Rev 1',
@@ -259,7 +352,6 @@ class DokumenUploadQATest(TestCase):
         doc.refresh_from_db()
         self.assertEqual(doc.judul, 'SOP Laboratorium Rev 1')
 
-        # 4. Delete
         url_del = reverse('nakes:dokumen_umum_delete', args=[doc.pk])
         res_del = self.client.post(url_del)
         self.assertEqual(res_del.status_code, 302)

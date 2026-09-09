@@ -1,5 +1,15 @@
 from django.contrib import admin
-from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum
+from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi
+
+
+@admin.register(Profesi)
+class ProfesiAdmin(admin.ModelAdmin):
+    list_display = ['nama', 'nakes_count']
+    search_fields = ['nama']
+
+    def nakes_count(self, obj):
+        return obj.nakes_list.count()
+    nakes_count.short_description = 'Jumlah Nakes'
 
 
 @admin.register(Nakes)

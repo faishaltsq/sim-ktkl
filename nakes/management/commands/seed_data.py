@@ -1,10 +1,15 @@
 from django.core.management.base import BaseCommand
 from django.contrib.auth.models import User
-from nakes.models import Nakes
+from nakes.models import Profesi
+
+DEFAULT_PROFESI = [
+    'ATLM', 'Radiografer', 'Fisioterapis', 'Nutrisionis',
+    'Perekam Medis', 'Apoteker', 'Sanitarian', 'Lainnya',
+]
 
 
 class Command(BaseCommand):
-    help = 'Seed data dummy untuk development'
+    help = 'Seed user dan profesi default'
 
     def handle(self, *args, **options):
         admin_user, created = User.objects.get_or_create(
@@ -33,61 +38,9 @@ class Command(BaseCommand):
             pengurus.save()
             self.stdout.write(self.style.SUCCESS('User pengurus dibuat (password: pengurus123)'))
 
-        data = [
-            {
-                'nama': 'Siti Rahma, A.Md.AK',
-                'profesi': 'ATLM',
-                'unit_kerja': 'Laboratorium Patologi Klinik',
-                'no_str': 'STR123456789',
-                'masa_berlaku_str': '2026-11-30',
-                'no_sip': 'SIP/LAB/012/2024',
-                'masa_berlaku_sip': '2027-05-15',
-                'status_kredensial': 'Selesai',
-                'kewenangan_klinis': 'Aktif',
-            },
-            {
-                'nama': 'Ahmad Fauzi, S.Tr.Kes',
-                'profesi': 'Radiografer',
-                'unit_kerja': 'Instalasi Radiologi',
-                'no_str': 'STR987654321',
-                'masa_berlaku_str': '2026-08-10',
-                'no_sip': 'SIP/RAD/045/2023',
-                'masa_berlaku_sip': '2026-09-01',
-                'status_kredensial': 'Dalam Proses',
-                'kewenangan_klinis': 'Evaluasi',
-            },
-            {
-                'nama': 'Dewi Lestari, S.Ft',
-                'profesi': 'Fisioterapis',
-                'unit_kerja': 'Instalasi Rehabilitasi Medik',
-                'no_str': 'STR555666777',
-                'masa_berlaku_str': '2028-03-20',
-                'no_sip': 'SIP/FT/078/2024',
-                'masa_berlaku_sip': '2028-06-01',
-                'status_kredensial': 'Selesai',
-                'kewenangan_klinis': 'Aktif',
-            },
-            {
-                'nama': 'Budi Santoso, S.Gz',
-                'profesi': 'Nutrisionis',
-                'unit_kerja': 'Instalasi Gizi',
-                'no_str': 'STR111222333',
-                'masa_berlaku_str': '2026-10-15',
-                'no_sip': 'SIP/GZ/034/2023',
-                'masa_berlaku_sip': '2026-12-01',
-                'status_kredensial': 'Selesai',
-                'kewenangan_klinis': 'Aktif',
-            },
-        ]
-
-        for item in data:
-            obj, created = Nakes.objects.get_or_create(
-                no_str=item['no_str'],
-                defaults={**item, 'created_by': admin_user},
-            )
+        for nama in DEFAULT_PROFESI:
+            _, created = Profesi.objects.get_or_create(nama=nama)
             if created:
-                self.stdout.write(self.style.SUCCESS(f'Nakes {obj.nama} ditambahkan'))
-            else:
-                self.stdout.write(f'Nakes {obj.nama} sudah ada, skip')
+                self.stdout.write(self.style.SUCCESS(f'Profesi {nama} ditambahkan'))
 
         self.stdout.write(self.style.SUCCESS('Seed selesai.'))

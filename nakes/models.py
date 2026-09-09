@@ -2,18 +2,19 @@ from django.db import models
 from django.conf import settings
 
 
-class Nakes(models.Model):
-    PROFESI_CHOICES = [
-        ('ATLM', 'ATLM (Teknisi Laboratorium Medik)'),
-        ('Radiografer', 'Radiografer'),
-        ('Fisioterapis', 'Fisioterapis'),
-        ('Nutrisionis', 'Nutrisionis'),
-        ('Perekam Medis', 'Perekam Medis'),
-        ('Apoteker', 'Apoteker'),
-        ('Sanitarian', 'Sanitarian'),
-        ('Lainnya', 'Lainnya'),
-    ]
+class Profesi(models.Model):
+    nama = models.CharField(max_length=100, unique=True)
 
+    class Meta:
+        verbose_name = 'Profesi'
+        verbose_name_plural = 'Profesi'
+        ordering = ['nama']
+
+    def __str__(self):
+        return self.nama
+
+
+class Nakes(models.Model):
     STATUS_KREDENSIAL_CHOICES = [
         ('Belum Pengajuan', 'Belum Pengajuan'),
         ('Dalam Proses', 'Dalam Proses'),
@@ -28,7 +29,7 @@ class Nakes(models.Model):
     ]
 
     nama = models.CharField(max_length=200)
-    profesi = models.CharField(max_length=50, choices=PROFESI_CHOICES)
+    profesi = models.ForeignKey(Profesi, on_delete=models.PROTECT, related_name='nakes_list')
     unit_kerja = models.CharField(max_length=200)
     no_str = models.CharField('Nomor STR', max_length=50, unique=True)
     masa_berlaku_str = models.DateField('Masa Berlaku STR')
