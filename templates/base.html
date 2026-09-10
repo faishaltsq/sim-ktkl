@@ -15,9 +15,9 @@
             --primary-muted: #A3D5D3;
             --sidebar-bg: #0F1923;
             --sidebar-surface: #162230;
-            --sidebar-text: #7E8FA6;
-            --sidebar-active-bg: rgba(12, 124, 132, 0.15);
-            --sidebar-active-text: #0C7C84;
+            --sidebar-text: #CBD5E1;
+            --sidebar-active-bg: #0C7C84;
+            --sidebar-active-text: #FFFFFF;
             --body-bg: #F8FAFB;
             --surface: #FFFFFF;
             --border: #E2E8F0;
@@ -65,7 +65,7 @@
             margin-bottom: 0.1rem;
         }
         .sidebar-brand small {
-            color: var(--sidebar-text);
+            color: #94A3B8;
             font-size: 0.7rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
@@ -76,7 +76,7 @@
             font-size: 0.65rem;
             text-transform: uppercase;
             letter-spacing: 0.1em;
-            color: var(--sidebar-text);
+            color: #94A3B8;
             font-weight: 600;
         }
         .sidebar-nav .nav-link {
@@ -96,7 +96,7 @@
             font-size: 1rem;
             width: 1.2rem;
             text-align: center;
-            opacity: 0.7;
+            opacity: 0.85;
         }
         .sidebar-nav .nav-link:hover {
             color: #fff;
@@ -105,8 +105,10 @@
         .sidebar-nav .nav-link.active {
             color: var(--sidebar-active-text);
             background: var(--sidebar-active-bg);
+            box-shadow: 0 2px 6px rgba(12, 124, 132, 0.4);
+            font-weight: 600;
         }
-        .sidebar-nav .nav-link.active i { opacity: 1; }
+        .sidebar-nav .nav-link.active i { opacity: 1; color: #fff; }
         .sidebar-footer {
             padding: 1rem 1.25rem;
             border-top: 1px solid rgba(255,255,255,0.06);
