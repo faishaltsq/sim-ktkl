@@ -24,8 +24,18 @@
             <div class="d-flex gap-2 mt-4">
                 <button type="submit" class="btn btn-primary flex-grow-1 flex-md-grow-0" style="min-width:140px;">Simpan</button>
                 <a href="{% url 'nakes:sidang_calendar' %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0">Batal</a>
+                {% if form.instance.pk %}
+                <button type="button" class="btn btn-outline-danger ms-auto" onclick="if(confirm('Hapus jadwal sidang ini?')) document.getElementById('delete-sidang-form').submit();">
+                    <i class="bi bi-trash me-1"></i> Hapus Jadwal
+                </button>
+                {% endif %}
             </div>
         </form>
+        {% if form.instance.pk %}
+        <form id="delete-sidang-form" method="post" action="{% url 'nakes:sidang_delete' form.instance.pk %}" style="display:none;">
+            {% csrf_token %}
+        </form>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

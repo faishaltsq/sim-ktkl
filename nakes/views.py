@@ -1078,6 +1078,7 @@ def sidang_events_api(request):
                 'rekomendasi_pembinaan': s.rekomendasi_pembinaan,
                 'tindak_lanjut': s.tindak_lanjut,
                 'edit_url': reverse('nakes:sidang_update', args=[s.pk]),
+                'delete_url': reverse('nakes:sidang_delete', args=[s.pk]),
             },
         })
     return JsonResponse(events, safe=False)

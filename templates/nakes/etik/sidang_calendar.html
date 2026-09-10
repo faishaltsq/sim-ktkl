@@ -164,7 +164,13 @@
                     <a href="#" id="modalEditBtn" class="btn btn-primary btn-sm" style="font-weight:600;min-width:90px;">
                         <i class="bi bi-pencil me-1"></i> Edit
                     </a>
-                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="min-width:80px;">Tutup</button>
+                    <form method="post" id="modalDeleteForm" class="d-inline" onsubmit="return confirm('Hapus jadwal sidang ini?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm" style="min-width:80px;">
+                            <i class="bi bi-trash me-1"></i> Hapus
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-secondary btn-sm ms-auto" data-bs-dismiss="modal" style="min-width:80px;">Tutup</button>
                 </div>
             </div>
         </div>
@@ -221,6 +227,7 @@ document.addEventListener('DOMContentLoaded', function() {
             tindakRow.style.display = p.tindak_lanjut ? '' : 'none';
 
             document.getElementById('modalEditBtn').href = p.edit_url;
+            document.getElementById('modalDeleteForm').action = p.delete_url;
             modal.show();
         },
         eventDidMount: function(info) {
