@@ -8,34 +8,106 @@
 <style>
 .fc { font-size: 0.82rem; }
 .fc-toolbar-title { font-size: 1rem !important; font-weight: 700 !important; }
-.fc-button { font-size: 0.78rem !important; padding: 0.3rem 0.75rem !important; border-radius: 6px !important; }
-.fc-button-primary { background-color: var(--primary) !important; border-color: var(--primary) !important; }
-.fc-button-primary:hover { background-color: var(--primary-deep) !important; border-color: var(--primary-deep) !important; }
-.fc-event { border-radius: 5px !important; font-weight: 600 !important; font-size: 0.75rem !important; cursor: pointer !important; }
+.fc-toolbar { flex-wrap: wrap; gap: 0.5rem; }
+.fc-button {
+    font-size: 0.78rem !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: var(--radius) !important;
+    font-weight: 500 !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+    transition: all 0.15s ease !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+}
+.fc-button:hover {
+    background: var(--primary-light) !important;
+    color: var(--primary) !important;
+    border-color: var(--primary) !important;
+}
+.fc-button-active, .fc-button.fc-button-primary:not(:disabled).fc-button-active {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+    box-shadow: 0 1px 4px rgba(12, 124, 132, 0.25) !important;
+}
+.fc-prev-button, .fc-next-button {
+    padding: 0.35rem 0.55rem !important;
+}
+.fc-today-button {
+    background: var(--primary) !important;
+    color: #fff !important;
+    border-color: var(--primary) !important;
+}
+.fc-today-button:hover {
+    background: var(--primary-deep) !important;
+    border-color: var(--primary-deep) !important;
+    color: #fff !important;
+}
+.fc-today-button:disabled {
+    opacity: 0.5 !important;
+}
+.fc-event {
+    border-radius: 5px !important;
+    font-weight: 600 !important;
+    font-size: 0.75rem !important;
+    cursor: pointer !important;
+    padding: 2px 5px !important;
+    border: none !important;
+}
 .fc-day-today { background: var(--primary-light) !important; }
-.fc-col-header-cell { background: #f8fafb; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; }
+.fc-col-header-cell {
+    background: #f8fafb;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    padding: 0.5rem 0 !important;
+}
 .modal-backdrop { z-index: 1040; }
 #sidangModal { z-index: 1050; }
-.modal-card-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; }
+.modal-card-label {
+    font-size: 0.7rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 0.15rem;
+}
+@media (max-width: 767.98px) {
+    .fc-toolbar { font-size: 0.75rem; }
+    .fc-toolbar-title { font-size: 0.88rem !important; }
+    .fc-button { font-size: 0.72rem !important; padding: 0.28rem 0.55rem !important; }
+}
 </style>
 {% endblock %}
 
 {% block content %}
 <div class="d-flex justify-content-between align-items-center mb-3">
     <div></div>
-    <a href="{% url 'nakes:sidang_create' %}" class="btn btn-primary btn-sm">
+    <a href="{% url 'nakes:sidang_create' %}" class="btn btn-primary btn-sm" style="border-radius:var(--radius);font-weight:600;">
         <i class="bi bi-calendar-plus me-1"></i> Jadwalkan Sidang Baru
     </a>
 </div>
 
 <div class="card">
-    <div class="card-header d-flex gap-2 flex-wrap" style="font-size:0.75rem;">
-        <span style="color:#0C7C84;font-weight:600;"><span style="display:inline-block;width:12px;height:12px;background:#0C7C84;border-radius:3px;margin-right:4px;"></span>Terjadwal</span>
-        <span style="color:#059669;font-weight:600;"><span style="display:inline-block;width:12px;height:12px;background:#059669;border-radius:3px;margin-right:4px;"></span>Selesai</span>
-        <span style="color:#D97706;font-weight:600;"><span style="display:inline-block;width:12px;height:12px;background:#D97706;border-radius:3px;margin-right:4px;"></span>Ditunda</span>
-        <span style="color:#DC2626;font-weight:600;"><span style="display:inline-block;width:12px;height:12px;background:#DC2626;border-radius:3px;margin-right:4px;"></span>Dibatalkan</span>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div class="d-flex gap-3 flex-wrap" style="font-size:0.75rem;">
+            <span style="color:#0C7C84;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#0C7C84;border-radius:2px;display:inline-block;"></span> Terjadwal
+            </span>
+            <span style="color:#059669;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#059669;border-radius:2px;display:inline-block;"></span> Selesai
+            </span>
+            <span style="color:#D97706;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#D97706;border-radius:2px;display:inline-block;"></span> Ditunda
+            </span>
+            <span style="color:#DC2626;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#DC2626;border-radius:2px;display:inline-block;"></span> Dibatalkan
+            </span>
+        </div>
     </div>
-    <div class="card-body p-3">
+    <div class="card-body p-2 p-md-3">
         <div id="calendar"></div>
     </div>
 </div>
@@ -87,11 +159,13 @@
                     </div>
                 </div>
             </div>
-            <div class="modal-footer" style="justify-content:flex-start;gap:0.5rem;">
-                <a href="#" id="modalEditBtn" class="btn btn-outline-primary btn-sm">
-                    <i class="bi bi-pencil me-1"></i> Edit
-                </a>
-                <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal">Tutup</button>
+            <div class="modal-footer" style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);background:#fafafa;border-radius:0 0 0.5rem 0.5rem;">
+                <div class="d-flex gap-2 w-100 align-items-center">
+                    <a href="#" id="modalEditBtn" class="btn btn-primary btn-sm" style="font-weight:600;min-width:90px;">
+                        <i class="bi bi-pencil me-1"></i> Edit
+                    </a>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="min-width:80px;">Tutup</button>
+                </div>
             </div>
         </div>
     </div>
