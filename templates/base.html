@@ -3,265 +3,506 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}VIRA NAKES{% endblock %}</title>
+    <title>{% block title %}VIRA NAKES - RS PKU Muhammadiyah Gombong{% endblock %}</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
     <style>
         :root {
-            --primary: #0C7C84;
-            --primary-deep: #065A60;
-            --primary-light: #E8F6F3;
-            --primary-muted: #A3D5D3;
-            --sidebar-bg: #0F1923;
-            --sidebar-surface: #162230;
-            --sidebar-text: #CBD5E1;
-            --sidebar-active-bg: #0C7C84;
+            --primary: #0284C7;
+            --primary-deep: #0369A1;
+            --primary-light: #E0F2FE;
+            --pku-green: #0D7A53;
+            --pku-green-light: #E8F5E9;
+            --teal: #0C7C84;
+            --sidebar-bg: #FFFFFF;
+            --sidebar-border: #E2E8F0;
+            --sidebar-title: #0F172A;
+            --sidebar-subtext: #64748B;
+            --sidebar-active-bg: #0284C7;
             --sidebar-active-text: #FFFFFF;
-            --body-bg: #F8FAFB;
+            --body-bg: #F1F5F9;
             --surface: #FFFFFF;
             --border: #E2E8F0;
-            --text-primary: #1A202C;
-            --text-secondary: #64748B;
+            --border-subtle: #F1F5F9;
+            --text-primary: #0F172A;
+            --text-secondary: #475569;
             --text-muted: #94A3B8;
-            --danger: #DC2626;
-            --danger-light: #FEF2F2;
-            --warning: #D97706;
-            --warning-light: #FFFBEB;
-            --success: #059669;
-            --success-light: #ECFDF5;
-            --radius: 0.375rem;
-            --radius-lg: 0.5rem;
+            --danger: #EF4444;
+            --danger-light: #FEE2E2;
+            --danger-deep: #B91C1C;
+            --warning: #F59E0B;
+            --warning-light: #FEF3C7;
+            --warning-deep: #B45309;
+            --success: #10B981;
+            --success-light: #D1FAE5;
+            --success-deep: #047857;
+            --radius-sm: 0.375rem;
+            --radius: 0.5rem;
+            --radius-lg: 0.75rem;
+            --radius-xl: 1rem;
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.06), 0 1px 2px -1px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
         }
 
-        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; }
+        * { font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif; box-sizing: border-box; }
+        h1, h2, h3, h4, h5, h6, .display-font { font-family: 'Plus Jakarta Sans', sans-serif; }
+        code, .font-mono { font-family: 'JetBrains Mono', monospace !important; }
+
         body {
             background-color: var(--body-bg);
             color: var(--text-primary);
             font-size: 0.875rem;
-            line-height: 1.6;
+            line-height: 1.55;
+            margin: 0;
+            padding: 0;
         }
 
+        /* SIDEBAR DESKTOP */
         .sidebar-desktop {
             position: fixed;
             top: 0; left: 0;
-            width: 240px;
+            width: 260px;
             height: 100vh;
             background: var(--sidebar-bg);
+            border-right: 1px solid var(--sidebar-border);
             overflow-y: auto;
             z-index: 1030;
             display: flex;
             flex-direction: column;
         }
         .sidebar-brand {
-            padding: 1.5rem 1.25rem 1rem;
-            border-bottom: 1px solid rgba(255,255,255,0.06);
+            padding: 1.25rem 1.25rem 1rem;
+            border-bottom: 1px solid var(--sidebar-border);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
         }
-        .sidebar-brand h5 {
-            color: #fff;
-            font-weight: 700;
-            font-size: 1.05rem;
+        .sidebar-brand-logo {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--pku-green-light);
+            border: 2px solid #0D7A53;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #0D7A53;
+            font-size: 1.25rem;
+            flex-shrink: 0;
+        }
+        .sidebar-brand-text h6 {
+            margin: 0;
+            font-size: 0.82rem;
+            font-weight: 800;
+            color: #0D7A53;
+            line-height: 1.15;
             letter-spacing: -0.01em;
-            margin-bottom: 0.1rem;
+            text-transform: uppercase;
         }
-        .sidebar-brand small {
-            color: #94A3B8;
-            font-size: 0.7rem;
+        .sidebar-brand-text small {
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            font-weight: 600;
+            letter-spacing: 0.02em;
+        }
+
+        .sidebar-nav { padding: 0.85rem 0; flex: 1; }
+        .sidebar-nav .nav-section {
+            padding: 0.65rem 1.25rem 0.35rem;
+            font-size: 0.68rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
+            color: var(--text-muted);
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 0.4rem;
         }
-        .sidebar-nav { padding: 0.75rem 0; flex: 1; }
-        .sidebar-nav .nav-section {
-            padding: 0.5rem 1.25rem 0.35rem;
-            font-size: 0.65rem;
-            text-transform: uppercase;
-            letter-spacing: 0.1em;
-            color: #94A3B8;
-            font-weight: 600;
+        .sidebar-nav .nav-section::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: #F1F5F9;
         }
+
         .sidebar-nav .nav-link {
-            color: var(--sidebar-text);
-            padding: 0.55rem 1.25rem;
-            font-size: 0.82rem;
-            font-weight: 500;
-            border-radius: 0;
-            margin: 0 0.5rem;
+            color: var(--sidebar-title);
+            padding: 0.55rem 0.85rem;
+            margin: 0.15rem 0.75rem;
             border-radius: var(--radius);
             transition: all 0.15s ease;
             display: flex;
             align-items: center;
-            gap: 0.6rem;
+            gap: 0.75rem;
+            text-decoration: none;
         }
-        .sidebar-nav .nav-link i {
-            font-size: 1rem;
-            width: 1.2rem;
+        .sidebar-nav .nav-link .nav-icon {
+            font-size: 1.15rem;
+            width: 1.5rem;
             text-align: center;
-            opacity: 0.85;
+            color: var(--text-secondary);
+            flex-shrink: 0;
         }
-        .sidebar-nav .nav-link:hover {
-            color: #fff;
-            background: var(--sidebar-surface);
+        .sidebar-nav .nav-link .nav-text {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.2;
         }
-        .sidebar-nav .nav-link.active {
-            color: var(--sidebar-active-text);
-            background: var(--sidebar-active-bg);
-            box-shadow: 0 2px 6px rgba(12, 124, 132, 0.4);
+        .sidebar-nav .nav-link .nav-title {
             font-weight: 600;
+            font-size: 0.82rem;
+            color: inherit;
         }
-        .sidebar-nav .nav-link.active i { opacity: 1; color: #fff; }
-        .sidebar-footer {
-            padding: 1rem 1.25rem;
-            border-top: 1px solid rgba(255,255,255,0.06);
-        }
-        .sidebar-footer .nav-link {
-            padding: 0.45rem 0;
-            margin: 0;
-            border-radius: 0;
+        .sidebar-nav .nav-link .nav-desc {
+            font-size: 0.68rem;
+            color: var(--sidebar-subtext);
+            margin-top: 1px;
+            font-weight: 400;
         }
 
-        .main-content { margin-left: 240px; min-height: 100vh; }
+        .sidebar-nav .nav-link:hover {
+            background: #F8FAFC;
+            color: var(--primary);
+        }
+        .sidebar-nav .nav-link:hover .nav-icon {
+            color: var(--primary);
+        }
+
+        .sidebar-nav .nav-link.active {
+            background: var(--sidebar-active-bg);
+            color: var(--sidebar-active-text) !important;
+            box-shadow: 0 4px 10px rgba(2, 132, 199, 0.28);
+        }
+        .sidebar-nav .nav-link.active .nav-icon {
+            color: #FFFFFF !important;
+        }
+        .sidebar-nav .nav-link.active .nav-title {
+            color: #FFFFFF !important;
+            font-weight: 700;
+        }
+        .sidebar-nav .nav-link.active .nav-desc {
+            color: rgba(255, 255, 255, 0.82) !important;
+        }
+
+        .sidebar-footer {
+            padding: 0.85rem 1rem;
+            border-top: 1px solid var(--sidebar-border);
+            background: #FAFAFA;
+        }
+        .sidebar-footer .nav-link {
+            padding: 0.45rem 0.5rem;
+            margin: 0;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        /* MAIN CONTENT AREA */
+        .main-content {
+            margin-left: 260px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* TOPBAR (Institutional & clean like reference) */
         .top-bar {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 0.75rem 1.5rem;
+            padding: 0.75rem 1.75rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
             position: sticky;
             top: 0;
             z-index: 1020;
+            box-shadow: var(--shadow-sm);
         }
-        .top-bar h5 {
-            font-size: 0.95rem;
-            font-weight: 600;
-            color: var(--text-primary);
+        .top-bar .page-heading {
+            display: flex;
+            align-items: baseline;
+            gap: 0.6rem;
             margin: 0;
         }
-        .top-bar .user-info {
-            font-size: 0.8rem;
+        .top-bar .page-heading h5 {
+            font-size: 1.08rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+        .top-bar .page-heading small {
+            font-size: 0.75rem;
             color: var(--text-secondary);
+            font-weight: 500;
+        }
+        .top-bar .user-pill {
             display: flex;
             align-items: center;
-            gap: 0.5rem;
+            gap: 0.75rem;
+        }
+        .top-bar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            padding: 0.3rem 0.75rem 0.3rem 0.4rem;
+            border-radius: 9999px;
+            background: #F8FAFC;
+            border: 1px solid var(--border);
         }
         .top-bar .user-avatar {
-            width: 28px; height: 28px;
+            width: 30px; height: 30px;
             border-radius: 50%;
-            background: var(--primary-light);
-            color: var(--primary);
+            background: var(--primary);
+            color: #FFFFFF;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 600;
-            font-size: 0.7rem;
+            font-weight: 700;
+            font-size: 0.75rem;
         }
-        .content-area { padding: 1.5rem; }
+        .top-bar .user-text {
+            line-height: 1.15;
+            text-align: left;
+        }
+        .top-bar .user-name {
+            font-weight: 600;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            display: block;
+        }
+        .top-bar .user-role {
+            font-size: 0.66rem;
+            color: var(--text-muted);
+            display: block;
+        }
+        .top-bar .btn-logout {
+            border: 1px solid var(--border);
+            background: #FFFFFF;
+            color: var(--text-secondary);
+            font-size: 0.78rem;
+            padding: 0.35rem 0.75rem;
+            border-radius: var(--radius);
+            font-weight: 600;
+            transition: all 0.15s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .top-bar .btn-logout:hover {
+            background: var(--danger-light);
+            color: var(--danger-deep);
+            border-color: var(--danger-light);
+        }
 
+        .content-area {
+            padding: 1.5rem 1.75rem;
+            flex: 1;
+        }
+
+        /* CARD COMPONENT */
         .card {
+            background: var(--surface);
             border: 1px solid var(--border);
             border-radius: var(--radius-lg);
-            box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+            box-shadow: var(--shadow);
+            transition: box-shadow 0.2s ease;
+        }
+        .card:hover {
+            box-shadow: var(--shadow-md);
         }
         .card-header {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
-            padding: 0.75rem 1rem;
-            font-weight: 600;
-            font-size: 0.82rem;
+            padding: 0.85rem 1.25rem;
+            font-weight: 700;
+            font-size: 0.85rem;
             color: var(--text-primary);
+            border-top-left-radius: calc(var(--radius-lg) - 1px) !important;
+            border-top-right-radius: calc(var(--radius-lg) - 1px) !important;
         }
 
-        .metric-card {
-            border-left: 3px solid var(--border);
+        /* PAGE HEADER STRIP (Domain themed) */
+        .page-header-box {
+            background: #FFFFFF;
+            border: 1px solid var(--border);
             border-radius: var(--radius-lg);
-            transition: border-color 0.15s ease;
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.25rem;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 0.75rem;
+            border-left: 4px solid var(--primary);
         }
-        .metric-card:hover { border-left-color: var(--primary); }
-        .metric-card .card-body { padding: 1.25rem; }
-        .metric-value {
-            font-size: 1.75rem;
-            font-weight: 700;
+        .page-header-box.domain-mutu { border-left-color: #1E40AF; }
+        .page-header-box.domain-etik { border-left-color: #991B1B; }
+        .page-header-box.domain-sekre { border-left-color: #92400E; }
+        .page-header-box.domain-main { border-left-color: #0284C7; }
+
+        .page-header-box .page-title-text {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            font-weight: 800;
+            font-size: 1.15rem;
             color: var(--text-primary);
+            margin: 0;
             line-height: 1.2;
         }
-        .metric-label {
+        .page-header-box .page-subtitle-text {
             font-size: 0.75rem;
-            color: var(--text-muted);
-            font-weight: 500;
-            text-transform: uppercase;
-            letter-spacing: 0.04em;
-            margin-top: 0.25rem;
+            color: var(--text-secondary);
+            margin: 0.15rem 0 0;
         }
-        .metric-card.metric-primary { border-left-color: var(--primary); }
-        .metric-card.metric-success { border-left-color: var(--success); }
-        .metric-card.metric-info { border-left-color: #3B82F6; }
 
-        .table { font-size: 0.82rem; }
+        /* TABLES */
+        .table-responsive {
+            border-radius: var(--radius-lg);
+        }
+        .table {
+            font-size: 0.82rem;
+            margin-bottom: 0;
+            border-collapse: separate;
+            border-spacing: 0;
+        }
         .table th {
-            font-weight: 600;
+            font-weight: 700;
             color: var(--text-secondary);
             text-transform: uppercase;
             font-size: 0.7rem;
             letter-spacing: 0.05em;
-            border-bottom-width: 1px;
-            padding: 0.65rem 0.75rem;
+            background: #F8FAFC;
+            border-bottom: 1px solid var(--border);
+            padding: 0.75rem 1rem;
+            vertical-align: middle;
         }
         .table td {
-            padding: 0.65rem 0.75rem;
+            padding: 0.75rem 1rem;
             vertical-align: middle;
             color: var(--text-primary);
+            border-bottom: 1px solid var(--border);
         }
-        .table-hover tbody tr:hover { background-color: var(--primary-light); }
+        .table-hover tbody tr:hover td {
+            background-color: #F8FAFC;
+        }
 
+        /* BADGES */
         .badge {
-            font-weight: 500;
+            font-weight: 600;
             font-size: 0.7rem;
-            padding: 0.3em 0.6em;
-            border-radius: 0.25rem;
+            padding: 0.35em 0.75em;
+            border-radius: 9999px;
+            letter-spacing: 0.01em;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
         }
         .badge-status-success {
-            background: var(--success-light);
-            color: var(--success);
+            background: #D1FAE5;
+            color: #065F46;
+            border: 1px solid #A7F3D0;
         }
         .badge-status-warning {
-            background: var(--warning-light);
-            color: var(--warning);
+            background: #FEF3C7;
+            color: #92400E;
+            border: 1px solid #FDE68A;
         }
         .badge-status-danger {
-            background: var(--danger-light);
-            color: var(--danger);
+            background: #FEE2E2;
+            color: #991B1B;
+            border: 1px solid #FECACA;
         }
         .badge-status-neutral {
             background: #F1F5F9;
-            color: var(--text-secondary);
+            color: #475569;
+            border: 1px solid #E2E8F0;
         }
         .badge-status-info {
-            background: #EFF6FF;
-            color: #2563EB;
+            background: #E0F2FE;
+            color: #0369A1;
+            border: 1px solid #BAE6FD;
         }
 
+        /* BUTTONS */
+        .btn {
+            font-weight: 600;
+            font-size: 0.8rem;
+            border-radius: var(--radius);
+            padding: 0.45rem 0.95rem;
+            transition: all 0.15s ease;
+        }
+        .btn-sm {
+            padding: 0.35rem 0.75rem;
+            font-size: 0.75rem;
+        }
         .btn-primary {
             background: var(--primary);
             border-color: var(--primary);
+            color: #FFFFFF;
+            box-shadow: 0 1px 3px rgba(2, 132, 199, 0.2);
         }
         .btn-primary:hover {
             background: var(--primary-deep);
             border-color: var(--primary-deep);
+            color: #FFFFFF;
+            box-shadow: 0 3px 6px rgba(2, 132, 199, 0.3);
         }
         .btn-outline-primary {
             color: var(--primary);
             border-color: var(--primary);
+            background: transparent;
         }
         .btn-outline-primary:hover {
             background: var(--primary);
+            color: #FFFFFF;
             border-color: var(--primary);
         }
 
+        /* FORMS */
+        .form-control, .form-select {
+            border: 1px solid var(--border);
+            font-size: 0.85rem;
+            border-radius: var(--radius);
+            padding: 0.5rem 0.75rem;
+            color: var(--text-primary);
+            background-color: #FFFFFF;
+        }
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(2, 132, 199, 0.15);
+            outline: none;
+        }
+        .form-control-sm, .form-select-sm {
+            padding: 0.35rem 0.65rem;
+            font-size: 0.78rem;
+        }
+        .form-label {
+            font-weight: 600;
+            font-size: 0.78rem;
+            color: var(--text-primary);
+            margin-bottom: 0.35rem;
+        }
+
+        code {
+            font-size: 0.78rem;
+            color: #0369A1;
+            background: #F0F9FF;
+            padding: 0.15em 0.4em;
+            border-radius: 0.25rem;
+            border: 1px solid #E0F2FE;
+        }
+
+        /* ALERTS */
         .alert {
             border: none;
             border-radius: var(--radius);
             font-size: 0.82rem;
-            border-left: 3px solid;
+            border-left: 4px solid;
+            padding: 0.75rem 1rem;
         }
         .alert-warning {
             background: var(--warning-light);
@@ -279,37 +520,7 @@
             color: #065F46;
         }
 
-        .form-control, .form-select {
-            border-color: var(--border);
-            font-size: 0.85rem;
-            border-radius: var(--radius);
-        }
-        .form-control:focus, .form-select:focus {
-            border-color: var(--primary);
-            box-shadow: 0 0 0 2px rgba(12, 124, 132, 0.15);
-        }
-        .form-label {
-            font-weight: 500;
-            font-size: 0.8rem;
-            color: var(--text-secondary);
-            margin-bottom: 0.3rem;
-        }
-
-        a { color: var(--primary); }
-        a:hover { color: var(--primary-deep); }
-        code {
-            font-size: 0.78rem;
-            color: var(--text-secondary);
-            background: #F1F5F9;
-            padding: 0.15em 0.4em;
-            border-radius: 0.2rem;
-        }
-
-        .offcanvas-sidebar {
-            background-color: var(--sidebar-bg);
-            width: 280px !important;
-        }
-
+        /* MOBILE SIDEBAR */
         .mobile-topbar {
             background: var(--surface);
             border-bottom: 1px solid var(--border);
@@ -318,285 +529,100 @@
             top: 0;
             z-index: 1020;
         }
+        .offcanvas-sidebar {
+            background: var(--sidebar-bg);
+            width: 280px !important;
+        }
 
         @media (max-width: 767.98px) {
             .main-content { margin-left: 0; }
             .content-area { padding: 1rem; }
-            .metric-value { font-size: 1.3rem; }
-        }
-
-        @media (min-width: 768px) and (max-width: 991.98px) {
-            .sidebar-desktop { width: 200px; }
-            .main-content { margin-left: 200px; }
-            .sidebar-nav .nav-link { font-size: 0.78rem; padding: 0.45rem 1rem; }
         }
     </style>
     {% block extra_css %}{% endblock %}
 </head>
 <body>
 
+    <!-- MOBILE TOPBAR -->
     <nav class="d-md-none mobile-topbar d-flex justify-content-between align-items-center">
-        <button class="btn btn-sm border-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
-            <i class="bi bi-list fs-5"></i>
+        <button class="btn btn-sm border-0 p-0" type="button" data-bs-toggle="offcanvas" data-bs-target="#mobileSidebar">
+            <i class="bi bi-list fs-4 text-dark"></i>
         </button>
-        <span class="fw-600" style="font-size:0.85rem; font-weight:600;">VIRA NAKES</span>
-        <div class="user-avatar" style="width:28px;height:28px;border-radius:50%;background:var(--primary-light);color:var(--primary);display:flex;align-items:center;justify-content:center;font-weight:600;font-size:0.7rem;">
+        <div class="d-flex align-items-center gap-2">
+            <div class="sidebar-brand-logo" style="width:28px;height:28px;font-size:0.85rem;">
+                <i class="bi bi-hospital"></i>
+            </div>
+            <span style="font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:0.9rem;color:#0D7A53;">SIM KTKL</span>
+        </div>
+        <div class="user-avatar" style="width:28px;height:28px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:0.7rem;">
             {{ request.user.username|first|upper }}
         </div>
     </nav>
 
+    <!-- MOBILE OFFCANVAS SIDEBAR -->
     <div class="offcanvas offcanvas-start offcanvas-sidebar d-md-none" id="mobileSidebar" tabindex="-1">
-        <div class="offcanvas-header" style="border-bottom:1px solid rgba(255,255,255,0.06); padding:1.25rem;">
-            <div>
-                <h6 class="text-white mb-0" style="font-weight:700;">VIRA NAKES</h6>
-                <small style="color:var(--sidebar-text);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;">Virtual Assistant &amp; Integrated Regulation</small>
+        <div class="offcanvas-header border-bottom">
+            <div class="d-flex align-items-center gap-2">
+                <div class="sidebar-brand-logo">
+                    <i class="bi bi-hospital"></i>
+                </div>
+                <div class="sidebar-brand-text">
+                    <h6>RS PKU MUHAMMADIYAH</h6>
+                    <small>Komite Nakes Lain (KTKL)</small>
+                </div>
             </div>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas"></button>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas"></button>
         </div>
         <div class="offcanvas-body p-0">
-            <div class="sidebar-nav">
-                <div class="nav-section">Menu Utama</div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'nakes:dashboard' %}">
-                            <i class="bi bi-grid-1x2"></i> Dashboard
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'list' %}active{% endif %}" href="{% url 'nakes:list' %}">
-                            <i class="bi bi-people"></i> Data Nakes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}" href="{% url 'nakes:create' %}">
-                            <i class="bi bi-person-plus"></i> Tambah Nakes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'upload_bulk' %}active{% endif %}" href="{% url 'nakes:upload_bulk' %}">
-                            <i class="bi bi-upload"></i> Import Bulk
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'dokumen_hub' %}active{% endif %}" href="{% url 'nakes:dokumen_hub' %}">
-                            <i class="bi bi-folder2-open"></i> Dokumen
-                        </a>
-                    </li>
-                </ul>
-                <div class="nav-section mt-2">Sub Mutu &amp; Profesi</div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'oppe_list' or request.resolver_match.url_name == 'oppe_create' or request.resolver_match.url_name == 'oppe_detail' or request.resolver_match.url_name == 'oppe_update' %}active{% endif %}" href="{% url 'nakes:oppe_list' %}">
-                            <i class="bi bi-clipboard-check"></i> OPPE Nakes
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'mutu_list' or request.resolver_match.url_name == 'mutu_create' or request.resolver_match.url_name == 'mutu_detail' or request.resolver_match.url_name == 'mutu_update' %}active{% endif %}" href="{% url 'nakes:mutu_list' %}">
-                            <i class="bi bi-graph-up-arrow"></i> Mutu Layanan Klinis
-                        </a>
-                    </li>
-                </ul>
-                <div class="nav-section mt-2">Sub Etik &amp; Disiplin</div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'pelanggaran_list' or request.resolver_match.url_name == 'pelanggaran_create' or request.resolver_match.url_name == 'pelanggaran_update' %}active{% endif %}" href="{% url 'nakes:pelanggaran_list' %}">
-                            <i class="bi bi-shield-exclamation"></i> Pelanggaran Etik
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'sidang_calendar' or request.resolver_match.url_name == 'sidang_create' or request.resolver_match.url_name == 'sidang_update' %}active{% endif %}" href="{% url 'nakes:sidang_calendar' %}">
-                            <i class="bi bi-calendar-event"></i> Sidang &amp; Pembinaan
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'evaluasi_etik_list' or request.resolver_match.url_name == 'evaluasi_etik_create' or request.resolver_match.url_name == 'evaluasi_etik_update' %}active{% endif %}" href="{% url 'nakes:evaluasi_etik_list' %}">
-                            <i class="bi bi-award"></i> Evaluasi Kinerja Etik
-                        </a>
-                    </li>
-                </ul>
-                <div class="nav-section mt-2">Sekretariat &amp; Regulasi</div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'agenda_calendar' or request.resolver_match.url_name == 'agenda_create' or request.resolver_match.url_name == 'agenda_update' %}active{% endif %}" href="{% url 'nakes:agenda_calendar' %}">
-                            <i class="bi bi-calendar2-week"></i> Agenda Rapat
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'regulasi_list' or request.resolver_match.url_name == 'regulasi_create' or request.resolver_match.url_name == 'regulasi_update' %}active{% endif %}" href="{% url 'nakes:regulasi_list' %}">
-                            <i class="bi bi-journal-bookmark"></i> Regulasi &amp; Kebijakan
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'notulen_list' or request.resolver_match.url_name == 'notulen_create' or request.resolver_match.url_name == 'notulen_detail' or request.resolver_match.url_name == 'notulen_update' %}active{% endif %}" href="{% url 'nakes:notulen_list' %}">
-                            <i class="bi bi-journal-text"></i> Notulensi Rapat
-                        </a>
-                    </li>
-                </ul>
-                <div class="nav-section mt-2">Laporan</div>
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link {% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}" href="{% url 'nakes:audit_log' %}">
-                            <i class="bi bi-clock-history"></i> Log Audit
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'nakes:export' %}">
-                            <i class="bi bi-download"></i> Export Excel
-                        </a>
-                    </li>
-                </ul>
-            </div>
-            <div class="sidebar-footer">
-                <ul class="nav flex-column">
-                    <li class="nav-item">
-                        <a class="nav-link" href="{% url 'admin:index' %}">
-                            <i class="bi bi-gear"></i> Pengaturan
-                        </a>
-                    </li>
-                    <li class="nav-item">
-                        <form method="post" action="{% url 'accounts:logout' %}">
-                            {% csrf_token %}
-                            <button type="submit" class="nav-link border-0 bg-transparent w-100 text-start">
-                                <i class="bi bi-box-arrow-left"></i> Keluar
-                            </button>
-                        </form>
-                    </li>
-                </ul>
-            </div>
+            {% include "includes/sidebar_nav.html" %}
         </div>
     </div>
 
+    <!-- DESKTOP SIDEBAR -->
     <aside class="sidebar-desktop d-none d-md-flex flex-column">
         <div class="sidebar-brand">
-            <h5>VIRA NAKES</h5>
-            <small>Virtual Assistant &amp; Integrated Regulation</small>
-        </div>
-        <div class="sidebar-nav">
-            <div class="nav-section">Menu Utama</div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'nakes:dashboard' %}">
-                        <i class="bi bi-grid-1x2"></i> Dashboard
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'list' %}active{% endif %}" href="{% url 'nakes:list' %}">
-                        <i class="bi bi-people"></i> Data Nakes
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}" href="{% url 'nakes:create' %}">
-                        <i class="bi bi-person-plus"></i> Tambah Nakes
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'upload_bulk' %}active{% endif %}" href="{% url 'nakes:upload_bulk' %}">
-                        <i class="bi bi-upload"></i> Import Bulk
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'dokumen_hub' %}active{% endif %}" href="{% url 'nakes:dokumen_hub' %}">
-                        <i class="bi bi-folder2-open"></i> Dokumen
-                    </a>
-                </li>
-            </ul>
-            <div class="nav-section mt-2">Sub Mutu &amp; Profesi</div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'oppe_list' or request.resolver_match.url_name == 'oppe_create' or request.resolver_match.url_name == 'oppe_detail' or request.resolver_match.url_name == 'oppe_update' %}active{% endif %}" href="{% url 'nakes:oppe_list' %}">
-                        <i class="bi bi-clipboard-check"></i> OPPE Nakes
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'mutu_list' or request.resolver_match.url_name == 'mutu_create' or request.resolver_match.url_name == 'mutu_detail' or request.resolver_match.url_name == 'mutu_update' %}active{% endif %}" href="{% url 'nakes:mutu_list' %}">
-                        <i class="bi bi-graph-up-arrow"></i> Mutu Layanan Klinis
-                    </a>
-                </li>
-            </ul>
-            <div class="nav-section mt-2">Sub Etik &amp; Disiplin</div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'pelanggaran_list' or request.resolver_match.url_name == 'pelanggaran_create' or request.resolver_match.url_name == 'pelanggaran_update' %}active{% endif %}" href="{% url 'nakes:pelanggaran_list' %}">
-                        <i class="bi bi-shield-exclamation"></i> Pelanggaran Etik
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'sidang_calendar' or request.resolver_match.url_name == 'sidang_create' or request.resolver_match.url_name == 'sidang_update' %}active{% endif %}" href="{% url 'nakes:sidang_calendar' %}">
-                        <i class="bi bi-calendar-event"></i> Sidang &amp; Pembinaan
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'evaluasi_etik_list' or request.resolver_match.url_name == 'evaluasi_etik_create' or request.resolver_match.url_name == 'evaluasi_etik_update' %}active{% endif %}" href="{% url 'nakes:evaluasi_etik_list' %}">
-                        <i class="bi bi-award"></i> Evaluasi Kinerja Etik
-                    </a>
-                </li>
-            </ul>
-            <div class="nav-section mt-2">Sekretariat &amp; Regulasi</div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'agenda_calendar' or request.resolver_match.url_name == 'agenda_create' or request.resolver_match.url_name == 'agenda_update' %}active{% endif %}" href="{% url 'nakes:agenda_calendar' %}">
-                        <i class="bi bi-calendar2-week"></i> Agenda Rapat
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'regulasi_list' or request.resolver_match.url_name == 'regulasi_create' or request.resolver_match.url_name == 'regulasi_update' %}active{% endif %}" href="{% url 'nakes:regulasi_list' %}">
-                        <i class="bi bi-journal-bookmark"></i> Regulasi &amp; Kebijakan
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'notulen_list' or request.resolver_match.url_name == 'notulen_create' or request.resolver_match.url_name == 'notulen_detail' or request.resolver_match.url_name == 'notulen_update' %}active{% endif %}" href="{% url 'nakes:notulen_list' %}">
-                        <i class="bi bi-journal-text"></i> Notulensi Rapat
-                    </a>
-                </li>
-            </ul>
-            <div class="nav-section mt-2">Laporan</div>
-            <ul class="nav flex-column">
-                <li class="nav-item">
-                    <a class="nav-link {% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}" href="{% url 'nakes:audit_log' %}">
-                        <i class="bi bi-clock-history"></i> Log Audit
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'nakes:export' %}">
-                        <i class="bi bi-download"></i> Export Excel
-                    </a>
-                </li>
-            </ul>
-        </div>
-        <div class="sidebar-footer">
-            <ul class="nav flex-column sidebar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="{% url 'admin:index' %}">
-                        <i class="bi bi-gear"></i> Pengaturan
-                    </a>
-                </li>
-                <li class="nav-item">
-                    <form method="post" action="{% url 'accounts:logout' %}">
-                        {% csrf_token %}
-                        <button type="submit" class="nav-link border-0 bg-transparent w-100 text-start">
-                            <i class="bi bi-box-arrow-left"></i> Keluar
-                        </button>
-                    </form>
-                </li>
-            </ul>
-        </div>
-    </aside>
-
-    <div class="main-content">
-        <div class="d-none d-md-flex top-bar">
-            <h5>{% block page_title %}{% endblock %}</h5>
-            <div class="user-info">
-                <span>{{ request.user.get_full_name|default:request.user.username }}</span>
-                <div class="user-avatar">{{ request.user.username|first|upper }}</div>
+            <div class="sidebar-brand-logo">
+                <i class="bi bi-hospital"></i>
+            </div>
+            <div class="sidebar-brand-text">
+                <h6>RS PKU MUHAMMADIYAH</h6>
+                <small>Komite Nakes Lain (KTKL)</small>
             </div>
         </div>
+        {% include "includes/sidebar_nav.html" %}
+    </aside>
 
-        <div class="content-area">
-            <h6 class="d-md-none mb-3" style="font-weight:600;">{% block page_title_mobile %}{% endblock %}</h6>
+    <!-- MAIN CONTENT -->
+    <div class="main-content">
+        <!-- DESKTOP TOP BAR -->
+        <header class="d-none d-md-flex top-bar">
+            <div class="page-heading">
+                <h5>SIM KTKL - Komite Tenaga Kesehatan Lain</h5>
+                <small>RS PKU Muhammadiyah Gombong</small>
+            </div>
+            <div class="user-pill">
+                <div class="user-info">
+                    <div class="user-avatar">
+                        {{ request.user.username|first|upper }}
+                    </div>
+                    <div class="user-text">
+                        <span class="user-name">{{ request.user.get_full_name|default:request.user.username }}</span>
+                        <span class="user-role">{% if request.user.is_superuser %}Administrator KTKL{% else %}Pengurus Komite{% endif %}</span>
+                    </div>
+                </div>
+                <form method="post" action="{% url 'accounts:logout' %}" class="d-inline">
+                    {% csrf_token %}
+                    <button type="submit" class="btn-logout">
+                        <i class="bi bi-box-arrow-right"></i> Logout
+                    </button>
+                </form>
+            </div>
+        </header>
 
+        <main class="content-area">
             {% if messages %}
                 {% for message in messages %}
-                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2 mb-3" role="alert">
+                    <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2 mb-3 shadow-sm" role="alert">
                         {{ message }}
                         <button type="button" class="btn-close" data-bs-dismiss="alert" style="font-size:0.65rem;"></button>
                     </div>
@@ -604,7 +630,7 @@
             {% endif %}
 
             {% block content %}{% endblock %}
-        </div>
+        </main>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

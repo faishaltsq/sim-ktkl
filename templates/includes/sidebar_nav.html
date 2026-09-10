@@ -1,0 +1,136 @@
+<div class="sidebar-nav">
+    <div class="nav-section">Menu Utama</div>
+    <nav class="nav flex-column">
+        <a class="nav-link {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'nakes:dashboard' %}">
+            <i class="bi bi-grid-1x2 nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Dashboard</span>
+                <span class="nav-desc">Ringkasan &amp; Metrik Utama</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'list' %}active{% endif %}" href="{% url 'nakes:list' %}">
+            <i class="bi bi-people nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Data Anggota</span>
+                <span class="nav-desc">Anggota Komite &amp; Nakes</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'create' %}active{% endif %}" href="{% url 'nakes:create' %}">
+            <i class="bi bi-person-plus nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Tambah Nakes</span>
+                <span class="nav-desc">Input Data Praktisi Baru</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'upload_bulk' %}active{% endif %}" href="{% url 'nakes:upload_bulk' %}">
+            <i class="bi bi-upload nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Import Bulk</span>
+                <span class="nav-desc">Unggah Data Excel Massal</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'dokumen_hub' %}active{% endif %}" href="{% url 'nakes:dokumen_hub' %}">
+            <i class="bi bi-folder2-open nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Dokumen Hub</span>
+                <span class="nav-desc">Arsip STR, SIP &amp; Dokumen RS</span>
+            </div>
+        </a>
+    </nav>
+
+    <div class="nav-section mt-2">Sub Mutu &amp; Profesi</div>
+    <nav class="nav flex-column">
+        <a class="nav-link {% if request.resolver_match.url_name == 'oppe_list' or request.resolver_match.url_name == 'oppe_create' or request.resolver_match.url_name == 'oppe_detail' or request.resolver_match.url_name == 'oppe_update' %}active{% endif %}" href="{% url 'nakes:oppe_list' %}">
+            <i class="bi bi-clipboard-check nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Evaluasi Kinerja (OPPE)</span>
+                <span class="nav-desc">Evaluasi Praktik Berkelanjutan</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'mutu_list' or request.resolver_match.url_name == 'mutu_create' or request.resolver_match.url_name == 'mutu_detail' or request.resolver_match.url_name == 'mutu_update' %}active{% endif %}" href="{% url 'nakes:mutu_list' %}">
+            <i class="bi bi-graph-up-arrow nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Mutu Layanan Klinis</span>
+                <span class="nav-desc">Audit Indikator Mutu Unit</span>
+            </div>
+        </a>
+    </nav>
+
+    <div class="nav-section mt-2">Sub Etik &amp; Disiplin</div>
+    <nav class="nav flex-column">
+        <a class="nav-link {% if request.resolver_match.url_name == 'pelanggaran_list' or request.resolver_match.url_name == 'pelanggaran_create' or request.resolver_match.url_name == 'pelanggaran_update' %}active{% endif %}" href="{% url 'nakes:pelanggaran_list' %}">
+            <i class="bi bi-shield-exclamation nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Pelanggaran Etik</span>
+                <span class="nav-desc">Catatan Kasus &amp; Investigasi</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'sidang_calendar' or request.resolver_match.url_name == 'sidang_create' or request.resolver_match.url_name == 'sidang_update' %}active{% endif %}" href="{% url 'nakes:sidang_calendar' %}">
+            <i class="bi bi-calendar-event nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Sidang &amp; Pembinaan</span>
+                <span class="nav-desc">Jadwal Majelis &amp; Rekomendasi</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'evaluasi_etik_list' or request.resolver_match.url_name == 'evaluasi_etik_create' or request.resolver_match.url_name == 'evaluasi_etik_update' %}active{% endif %}" href="{% url 'nakes:evaluasi_etik_list' %}">
+            <i class="bi bi-award nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Evaluasi Kinerja Etik</span>
+                <span class="nav-desc">Rekam Kepatuhan Semesteran</span>
+            </div>
+        </a>
+    </nav>
+
+    <div class="nav-section mt-2">Sekretariat &amp; Regulasi</div>
+    <nav class="nav flex-column">
+        <a class="nav-link {% if request.resolver_match.url_name == 'agenda_calendar' or request.resolver_match.url_name == 'agenda_create' or request.resolver_match.url_name == 'agenda_update' %}active{% endif %}" href="{% url 'nakes:agenda_calendar' %}">
+            <i class="bi bi-calendar2-week nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Rapat &amp; Agenda</span>
+                <span class="nav-desc">Kalender Jadwal Pleno KTKL</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'regulasi_list' or request.resolver_match.url_name == 'regulasi_create' or request.resolver_match.url_name == 'regulasi_update' %}active{% endif %}" href="{% url 'nakes:regulasi_list' %}">
+            <i class="bi bi-journal-bookmark nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Regulasi &amp; Kebijakan</span>
+                <span class="nav-desc">SK Direktur &amp; Perundangan RS</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.url_name == 'notulen_list' or request.resolver_match.url_name == 'notulen_create' or request.resolver_match.url_name == 'notulen_detail' or request.resolver_match.url_name == 'notulen_update' %}active{% endif %}" href="{% url 'nakes:notulen_list' %}">
+            <i class="bi bi-journal-text nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Notulensi Rapat</span>
+                <span class="nav-desc">Risalah &amp; Akta Keputusan</span>
+            </div>
+        </a>
+    </nav>
+
+    <div class="nav-section mt-2">Laporan &amp; Sistem</div>
+    <nav class="nav flex-column">
+        <a class="nav-link {% if request.resolver_match.url_name == 'audit_log' %}active{% endif %}" href="{% url 'nakes:audit_log' %}">
+            <i class="bi bi-clock-history nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Log Audit</span>
+                <span class="nav-desc">Jejak Forensik Aktivitas</span>
+            </div>
+        </a>
+        <a class="nav-link" href="{% url 'nakes:export' %}">
+            <i class="bi bi-download nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Export Laporan</span>
+                <span class="nav-desc">Unduh Excel Berkas Nakes</span>
+            </div>
+        </a>
+    </nav>
+</div>
+
+<div class="sidebar-footer">
+    <a class="nav-link d-flex align-items-center gap-2 text-decoration-none text-secondary" href="{% url 'admin:index' %}">
+        <i class="bi bi-gear fs-6"></i>
+        <div class="nav-text">
+            <div class="fw-bold" style="font-size:0.78rem;color:var(--text-primary);">Pengaturan</div>
+            <small class="text-muted" style="font-size:0.68rem;">Manajemen User &amp; Akses</small>
+        </div>
+    </a>
+</div>
