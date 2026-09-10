@@ -354,3 +354,157 @@ class EvaluasiMutuKlinis(models.Model):
     @property
     def gap(self):
         return self.capaian - self.standar_target
+
+
+# ==========================================
+# SUB ETIK & DISIPLIN PROFESI
+# ==========================================
+
+class PelanggaranEtik(models.Model):
+    KATEGORI_CHOICES = [
+        ('Ringan', 'Ringan'),
+        ('Sedang', 'Sedang'),
+        ('Berat', 'Berat'),
+    ]
+
+    STATUS_CHOICES = [
+        ('Menunggu Tindak Lanjut', 'Menunggu Tindak Lanjut'),
+        ('Dalam Investigasi', 'Dalam Investigasi'),
+        ('Diteruskan ke Sidang', 'Diteruskan ke Sidang'),
+        ('Selesai', 'Selesai'),
+    ]
+
+    nakes = models.ForeignKey(Nakes, on_delete=models.CASCADE, related_name='pelanggaran_etik_set', verbose_name='Tenaga Kesehatan')
+    tanggal_kejadian = models.DateField('Tanggal Kejadian')
+    tanggal_lapor = models.DateField('Tanggal Dilaporkan', default=date_type.today)
+    kategori = models.CharField('Kategori Pelanggaran', max_length=20, choices=KATEGORI_CHOICES, default='Ringan')
+    deskripsi = models.TextField('Catatan / Kronologi Pelanggaran')
+    pelapor = models.CharField('Nama Pelapor / Sumber Informasi', max_length=200, blank=True)
+    status = models.CharField('Status Tindak Lanjut', max_length=30, choices=STATUS_CHOICES, default='Menunggu Tindak Lanjut')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='pelanggaran_created')
+
+    class Meta:
+        verbose_name = 'Pelanggaran Etik'
+        verbose_name_plural = 'Pelanggaran Etik'
+        ordering = ['-tanggal_kejadian', '-created_at']
+
+    def __str__(self):
+        return f"Pelanggaran {self.nakes.nama} ({self.tanggal_kejadian})"
+
+    @property
+    def kategori_color(self):
+        return {'Ringan': 'info', 'Sedang': 'warning', 'Berat': 'danger'}.get(self.kategori, 'secondary')
+
+    @property
+    def status_color(self):
+        return {
+            'Menunggu Tindak Lanjut': 'warning',
+            'Dalam Investigasi': 'info',
+            'Diteruskan ke Sidang': 'primary',
+            'Selesai': 'success',
+        }.get(self.status, 'secondary')
+
+
+class SidangEtik(models.Model):
+    STATUS_CHOICES = [
+        ('Terjadwal', 'Terjadwal'),
+        ('Selesai', 'Selesai'),
+        ('Ditunda', 'Ditunda'),
+        ('Dibatalkan', 'Dibatalkan'),
+    ]
+
+    nakes = models.ForeignKey(Nakes, on_delete=models.CASCADE, related_name='sidang_etik_set', verbose_name='Tenaga Kesehatan Terperiksa')
+    pelanggaran = models.ForeignKey(PelanggaranEtik, on_delete=models.SET_NULL, null=True, blank=True, related_name='sidang_set', verbose_name='Pelanggaran Terkait')
+    judul_sidang = models.CharField('Agenda / Judul Sidang', max_length=250)
+    tanggal_sidang = models.DateField('Tanggal Sidang')
+    waktu_mulai = models.TimeField('Waktu Mulai')
+    waktu_selesai = models.TimeField('Waktu Selesai', null=True, blank=True)
+    tempat = models.CharField('Tempat / Ruangan', max_length=200, default='Ruang Rapat Komite Etik')
+    perangkat_sidang = models.TextField('Perangkat Sidang (Ketua, Sekretaris, Anggota)', blank=True)
+    status = models.CharField('Status Sidang', max_length=20, choices=STATUS_CHOICES, default='Terjadwal')
+    hasil_investigasi = models.TextField('Hasil Investigasi / Fakta Sidang', blank=True)
+    rekomendasi_pembinaan = models.TextField('Rekomendasi Pembinaan', blank=True)
+    tindak_lanjut = models.TextField('Tindak Lanjut Eksekusi Pembinaan', blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='sidang_created')
+
+    class Meta:
+        verbose_name = 'Sidang Etik'
+        verbose_name_plural = 'Sidang Etik'
+        ordering = ['tanggal_sidang', 'waktu_mulai']
+
+    def __str__(self):
+        return f"{self.judul_sidang} - {self.nakes.nama} ({self.tanggal_sidang})"
+
+    @property
+    def status_color(self):
+        return {
+            'Terjadwal': 'primary',
+            'Selesai': 'success',
+            'Ditunda': 'warning',
+            'Dibatalkan': 'danger',
+        }.get(self.status, 'secondary')
+
+
+class EvaluasiKinerjaEtik(models.Model):
+    SEMESTER_CHOICES = [
+        (1, 'Semester 1 (Januari - Juni)'),
+        (2, 'Semester 2 (Juli - Desember)'),
+    ]
+
+    PREDIKAT_CHOICES = [
+        ('Sangat Baik', 'Sangat Baik'),
+        ('Baik', 'Baik'),
+        ('Cukup', 'Cukup'),
+        ('Kurang', 'Kurang'),
+    ]
+
+    STATUS_KEPATUHAN_CHOICES = [
+        ('Patuh', 'Patuh (Tanpa Catatan)'),
+        ('Dalam Pembinaan', 'Dalam Pembinaan'),
+        ('Sanksi Aktif', 'Sanksi Aktif'),
+    ]
+
+    nakes = models.ForeignKey(Nakes, on_delete=models.CASCADE, related_name='evaluasi_etik_set', verbose_name='Tenaga Kesehatan')
+    periode_tahun = models.PositiveIntegerField('Tahun Evaluasi')
+    periode_semester = models.PositiveSmallIntegerField('Semester', choices=SEMESTER_CHOICES)
+    predikat = models.CharField('Predikat Kinerja Etik', max_length=20, choices=PREDIKAT_CHOICES, default='Baik')
+    status_kepatuhan = models.CharField('Status Kepatuhan Etik', max_length=30, choices=STATUS_KEPATUHAN_CHOICES, default='Patuh')
+    catatan_evaluasi = models.TextField('Catatan Evaluasi Perilaku & Etika')
+    rekomendasi_kelanjutan = models.TextField('Rekomendasi Kelanjutan Kewenangan / SPK', blank=True)
+    evaluator = models.CharField('Nama Evaluator / Penilai', max_length=200, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='evaluasi_etik_created')
+
+    class Meta:
+        verbose_name = 'Evaluasi Kinerja Etik'
+        verbose_name_plural = 'Evaluasi Kinerja Etik'
+        ordering = ['-periode_tahun', '-periode_semester', 'nakes__nama']
+        unique_together = [('nakes', 'periode_tahun', 'periode_semester')]
+
+    def __str__(self):
+        return f"Evaluasi Etik {self.nakes.nama} - {self.periode_tahun} Sem.{self.periode_semester}"
+
+    @property
+    def predikat_color(self):
+        return {
+            'Sangat Baik': 'success',
+            'Baik': 'primary',
+            'Cukup': 'warning',
+            'Kurang': 'danger',
+        }.get(self.predikat, 'secondary')
+
+    @property
+    def status_kepatuhan_color(self):
+        return {
+            'Patuh': 'success',
+            'Dalam Pembinaan': 'warning',
+            'Sanksi Aktif': 'danger',
+        }.get(self.status_kepatuhan, 'secondary')

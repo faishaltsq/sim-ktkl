@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+
+{% block title %}Riwayat Evaluasi Kinerja Etik - VIRA NAKES{% endblock %}
+{% block page_title %}Riwayat Evaluasi Kinerja Etik{% endblock %}
+{% block page_title_mobile %}Evaluasi Etik{% endblock %}
+
+{% block content %}
+<div class="card mb-3">
+    <div class="card-body py-2 px-3">
+        <form method="get" class="row g-2 align-items-center">
+            <div class="col-12 col-md-4">
+                <input type="text" name="q" value="{{ q }}" class="form-control form-control-sm" placeholder="Cari nama nakes atau unit...">
+            </div>
+            <div class="col-6 col-md-2">
+                <select name="tahun" class="form-select form-select-sm">
+                    <option value="">Semua Tahun</option>
+                    {% for y in years %}
+                    <option value="{{ y }}" {% if tahun == y|stringformat:"i" %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <select name="predikat" class="form-select form-select-sm">
+                    <option value="">Semua Predikat</option>
+                    <option value="Sangat Baik" {% if predikat == "Sangat Baik" %}selected{% endif %}>Sangat Baik</option>
+                    <option value="Baik" {% if predikat == "Baik" %}selected{% endif %}>Baik</option>
+                    <option value="Cukup" {% if predikat == "Cukup" %}selected{% endif %}>Cukup</option>
+                    <option value="Kurang" {% if predikat == "Kurang" %}selected{% endif %}>Kurang</option>
+                </select>
+            </div>
+            <div class="col-6 col-md-2">
+                <button type="submit" class="btn btn-outline-primary btn-sm w-100">Filter</button>
+            </div>
+            <div class="col-6 col-md-2">
+                <a href="{% url 'nakes:evaluasi_etik_create' %}" class="btn btn-primary btn-sm w-100">
+                    <i class="bi bi-plus-lg"></i> Evaluasi
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="d-none d-md-block">
+    <div class="card">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Nakes</th>
+                        <th>Profesi</th>
+                        <th>Unit Kerja</th>
+                        <th>Periode</th>
+                        <th>Predikat</th>
+                        <th>Status Kepatuhan</th>
+                        <th>Evaluator</th>
+                        <th class="text-end">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for e in evaluasi_list %}
+                    <tr>
+                        <td style="font-weight:600;">{{ e.nakes.nama }}</td>
+                        <td>{{ e.nakes.profesi.nama }}</td>
+                        <td>{{ e.nakes.unit_kerja }}</td>
+                        <td><span class="badge badge-status-neutral">{{ e.periode_tahun }} Sem.{{ e.periode_semester }}</span></td>
+                        <td><span class="badge badge-status-{{ e.predikat_color }}">{{ e.predikat }}</span></td>
+                        <td><span class="badge badge-status-{{ e.status_kepatuhan_color }}">{{ e.status_kepatuhan }}</span></td>
+                        <td style="color:var(--text-secondary);font-size:0.8rem;">{{ e.evaluator|default:"-" }}</td>
+                        <td class="text-end" style="white-space:nowrap;">
+                            <a href="{% url 'nakes:evaluasi_etik_update' e.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;"><i class="bi bi-pencil"></i></a>
+                            <form method="post" action="{% url 'nakes:evaluasi_etik_delete' e.pk %}" class="d-inline" onsubmit="return confirm('Hapus evaluasi kinerja etik ini?')">
+                                {% csrf_token %}
+                                <button type="submit" class="btn btn-sm btn-outline-danger" style="font-size:0.72rem;"><i class="bi bi-trash"></i></button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="8" class="text-center py-4" style="color:var(--text-muted);">Belum ada riwayat evaluasi kinerja etik.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="d-md-none">
+    {% for e in evaluasi_list %}
+    <div class="card mb-2">
+        <div class="card-body p-3">
+            <div class="d-flex justify-content-between align-items-start mb-1">
+                <div>
+                    <div style="font-weight:600;font-size:0.9rem;">{{ e.nakes.nama }}</div>
+                    <div style="font-size:0.75rem;color:var(--text-muted);">{{ e.nakes.profesi.nama }} &middot; {{ e.nakes.unit_kerja }}</div>
+                </div>
+                <span class="badge badge-status-{{ e.predikat_color }}">{{ e.predikat }}</span>
+            </div>
+            <div class="d-flex justify-content-between align-items-center py-2 border-top" style="border-color:var(--border) !important;font-size:0.8rem;">
+                <div>{{ e.periode_tahun }} Sem.{{ e.periode_semester }}</div>
+                <span class="badge badge-status-{{ e.status_kepatuhan_color }}">{{ e.status_kepatuhan }}</span>
+            </div>
+            <div class="d-flex justify-content-end gap-1 mt-2">
+                <a href="{% url 'nakes:evaluasi_etik_update' e.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;"><i class="bi bi-pencil me-1"></i> Edit</a>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="text-center py-4" style="color:var(--text-muted);">Belum ada riwayat evaluasi kinerja etik.</div>
+    {% endfor %}
+</div>
+{% endblock %}

@@ -6,15 +6,23 @@ from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
 from django.db.models import Q
-from django.http import HttpResponse, FileResponse
+from django.http import HttpResponse, FileResponse, JsonResponse
 from django.urls import reverse
 from openpyxl import Workbook, load_workbook
 from openpyxl.styles import Font, PatternFill, Alignment, Border, Side
 from openpyxl.utils.datetime import from_excel
 from openpyxl.worksheet.datavalidation import DataValidation
 
-from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi, EvaluasiOPPE, EvaluasiMutuKlinis
-from .forms import NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm, EvaluasiOPPEForm, EvaluasiMutuKlinisForm
+from .models import (
+    Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi,
+    EvaluasiOPPE, EvaluasiMutuKlinis,
+    PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik,
+)
+from .forms import (
+    NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm,
+    EvaluasiOPPEForm, EvaluasiMutuKlinisForm,
+    PelanggaranEtikForm, SidangEtikForm, EvaluasiKinerjaEtikForm,
+)
 
 
 HEADER_MAP = {
@@ -963,3 +971,225 @@ def mutu_delete(request, pk):
         mutu.delete()
         messages.success(request, 'Indikator mutu klinis berhasil dihapus.')
     return redirect('nakes:mutu_list')
+
+
+# ==========================================
+# SUB ETIK: PENCATATAN PELANGGARAN ETIK
+# ==========================================
+
+@login_required
+def pelanggaran_list(request):
+    qs = PelanggaranEtik.objects.select_related('nakes', 'nakes__profesi').all()
+    q = request.GET.get('q', '').strip()
+    kategori = request.GET.get('kategori', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if q:
+        qs = qs.filter(Q(nakes__nama__icontains=q) | Q(nakes__unit_kerja__icontains=q) | Q(deskripsi__icontains=q))
+    if kategori:
+        qs = qs.filter(kategori=kategori)
+    if status:
+        qs = qs.filter(status=status)
+
+    context = {
+        'pelanggaran_list': qs,
+        'q': q,
+        'kategori': kategori,
+        'status': status,
+    }
+    return render(request, 'nakes/etik/pelanggaran_list.html', context)
+
+
+@login_required
+def pelanggaran_create(request):
+    if request.method == 'POST':
+        form = PelanggaranEtikForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.created_by = request.user
+            obj.save()
+            log_audit(request.user, 'CREATE', obj, detail=f'Pelanggaran etik: {obj.nakes.nama}')
+            messages.success(request, f'Pelanggaran etik {obj.nakes.nama} berhasil dicatat.')
+            return redirect('nakes:pelanggaran_list')
+    else:
+        form = PelanggaranEtikForm(initial={'tanggal_lapor': date.today()})
+    return render(request, 'nakes/etik/pelanggaran_form.html', {'form': form, 'title': 'Catat Pelanggaran Etik'})
+
+
+@login_required
+def pelanggaran_update(request, pk):
+    obj = get_object_or_404(PelanggaranEtik, pk=pk)
+    if request.method == 'POST':
+        form = PelanggaranEtikForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            log_audit(request.user, 'UPDATE', obj, detail=f'Update pelanggaran etik: {obj.nakes.nama}')
+            messages.success(request, 'Data pelanggaran berhasil diperbarui.')
+            return redirect('nakes:pelanggaran_list')
+    else:
+        form = PelanggaranEtikForm(instance=obj)
+    return render(request, 'nakes/etik/pelanggaran_form.html', {'form': form, 'title': f'Edit - {obj.nakes.nama}'})
+
+
+@login_required
+def pelanggaran_delete(request, pk):
+    obj = get_object_or_404(PelanggaranEtik, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', obj, detail=f'Hapus pelanggaran etik: {obj.nakes.nama}')
+        obj.delete()
+        messages.success(request, 'Data pelanggaran berhasil dihapus.')
+    return redirect('nakes:pelanggaran_list')
+
+
+# ==========================================
+# SUB ETIK: SIDANG & REKOMENDASI PEMBINAAN
+# ==========================================
+
+@login_required
+def sidang_calendar(request):
+    return render(request, 'nakes/etik/sidang_calendar.html')
+
+
+@login_required
+def sidang_events_api(request):
+    qs = SidangEtik.objects.select_related('nakes', 'nakes__profesi').all()
+    color_map = {
+        'Terjadwal': '#0C7C84',
+        'Selesai': '#059669',
+        'Ditunda': '#D97706',
+        'Dibatalkan': '#DC2626',
+    }
+    events = []
+    for s in qs:
+        events.append({
+            'id': s.pk,
+            'title': s.judul_sidang,
+            'start': f'{s.tanggal_sidang}T{s.waktu_mulai.strftime("%H:%M")}',
+            'end': f'{s.tanggal_sidang}T{s.waktu_selesai.strftime("%H:%M")}' if s.waktu_selesai else None,
+            'color': color_map.get(s.status, '#64748B'),
+            'extendedProps': {
+                'pk': s.pk,
+                'nakes': s.nakes.nama,
+                'profesi': str(s.nakes.profesi),
+                'unit': s.nakes.unit_kerja,
+                'tempat': s.tempat,
+                'status': s.status,
+                'hasil_investigasi': s.hasil_investigasi,
+                'rekomendasi_pembinaan': s.rekomendasi_pembinaan,
+                'tindak_lanjut': s.tindak_lanjut,
+                'edit_url': reverse('nakes:sidang_update', args=[s.pk]),
+            },
+        })
+    return JsonResponse(events, safe=False)
+
+
+@login_required
+def sidang_create(request):
+    if request.method == 'POST':
+        form = SidangEtikForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.created_by = request.user
+            obj.save()
+            log_audit(request.user, 'CREATE', obj, detail=f'Sidang etik: {obj.judul_sidang}')
+            messages.success(request, f'Sidang etik "{obj.judul_sidang}" berhasil dijadwalkan.')
+            return redirect('nakes:sidang_calendar')
+    else:
+        form = SidangEtikForm(initial={'tanggal_sidang': date.today(), 'waktu_mulai': '09:00'})
+    return render(request, 'nakes/etik/sidang_form.html', {'form': form, 'title': 'Jadwalkan Sidang Etik'})
+
+
+@login_required
+def sidang_update(request, pk):
+    obj = get_object_or_404(SidangEtik, pk=pk)
+    if request.method == 'POST':
+        form = SidangEtikForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            log_audit(request.user, 'UPDATE', obj, detail=f'Update sidang: {obj.judul_sidang}')
+            messages.success(request, 'Data sidang berhasil diperbarui.')
+            return redirect('nakes:sidang_calendar')
+    else:
+        form = SidangEtikForm(instance=obj)
+    return render(request, 'nakes/etik/sidang_form.html', {'form': form, 'title': f'Edit - {obj.judul_sidang}'})
+
+
+@login_required
+def sidang_delete(request, pk):
+    obj = get_object_or_404(SidangEtik, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', obj, detail=f'Hapus sidang: {obj.judul_sidang}')
+        obj.delete()
+        messages.success(request, 'Data sidang berhasil dihapus.')
+    return redirect('nakes:sidang_calendar')
+
+
+# ==========================================
+# SUB ETIK: RIWAYAT EVALUASI KINERJA ETIK
+# ==========================================
+
+@login_required
+def evaluasi_etik_list(request):
+    qs = EvaluasiKinerjaEtik.objects.select_related('nakes', 'nakes__profesi').all()
+    q = request.GET.get('q', '').strip()
+    tahun = request.GET.get('tahun', '').strip()
+    predikat = request.GET.get('predikat', '').strip()
+
+    if q:
+        qs = qs.filter(Q(nakes__nama__icontains=q) | Q(nakes__unit_kerja__icontains=q))
+    if tahun:
+        qs = qs.filter(periode_tahun=tahun)
+    if predikat:
+        qs = qs.filter(predikat=predikat)
+
+    years = EvaluasiKinerjaEtik.objects.values_list('periode_tahun', flat=True).distinct().order_by('-periode_tahun')
+
+    context = {
+        'evaluasi_list': qs,
+        'q': q,
+        'tahun': tahun,
+        'predikat': predikat,
+        'years': years,
+    }
+    return render(request, 'nakes/etik/evaluasi_etik_list.html', context)
+
+
+@login_required
+def evaluasi_etik_create(request):
+    if request.method == 'POST':
+        form = EvaluasiKinerjaEtikForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.created_by = request.user
+            obj.save()
+            log_audit(request.user, 'CREATE', obj, detail=f'Evaluasi etik: {obj.nakes.nama} ({obj.periode_tahun} Sem.{obj.periode_semester})')
+            messages.success(request, f'Evaluasi kinerja etik {obj.nakes.nama} berhasil disimpan.')
+            return redirect('nakes:evaluasi_etik_list')
+    else:
+        form = EvaluasiKinerjaEtikForm(initial={'periode_tahun': date.today().year})
+    return render(request, 'nakes/etik/evaluasi_etik_form.html', {'form': form, 'title': 'Tambah Evaluasi Kinerja Etik'})
+
+
+@login_required
+def evaluasi_etik_update(request, pk):
+    obj = get_object_or_404(EvaluasiKinerjaEtik, pk=pk)
+    if request.method == 'POST':
+        form = EvaluasiKinerjaEtikForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            log_audit(request.user, 'UPDATE', obj, detail=f'Update evaluasi etik: {obj.nakes.nama}')
+            messages.success(request, 'Data evaluasi kinerja etik berhasil diperbarui.')
+            return redirect('nakes:evaluasi_etik_list')
+    else:
+        form = EvaluasiKinerjaEtikForm(instance=obj)
+    return render(request, 'nakes/etik/evaluasi_etik_form.html', {'form': form, 'title': f'Edit - {obj.nakes.nama}'})
+
+
+@login_required
+def evaluasi_etik_delete(request, pk):
+    obj = get_object_or_404(EvaluasiKinerjaEtik, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', obj, detail=f'Hapus evaluasi etik: {obj.nakes.nama}')
+        obj.delete()
+        messages.success(request, 'Data evaluasi kinerja etik berhasil dihapus.')
+    return redirect('nakes:evaluasi_etik_list')

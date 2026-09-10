@@ -1,7 +1,11 @@
 import os
 from django import forms
 from django.utils.safestring import mark_safe
-from .models import Nakes, DokumenNakes, DokumenUmum, Profesi, EvaluasiOPPE, EvaluasiMutuKlinis
+from .models import (
+    Nakes, DokumenNakes, DokumenUmum, Profesi,
+    EvaluasiOPPE, EvaluasiMutuKlinis,
+    PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik
+)
 
 ALLOWED_DOC_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx'}
 MAX_UPLOAD_SIZE = 15 * 1024 * 1024  # 15 MB
@@ -205,4 +209,67 @@ class EvaluasiMutuKlinisForm(forms.ModelForm):
             'analisis': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'rencana_tindak_lanjut': forms.Textarea(attrs={'class': 'form-control', 'rows': 3}),
             'penanggung_jawab': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+
+
+class PelanggaranEtikForm(forms.ModelForm):
+    class Meta:
+        model = PelanggaranEtik
+        fields = [
+            'nakes', 'tanggal_kejadian', 'tanggal_lapor',
+            'kategori', 'deskripsi', 'pelapor', 'status',
+        ]
+        widgets = {
+            'nakes': forms.Select(attrs={'class': 'form-select'}),
+            'tanggal_kejadian': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'tanggal_lapor': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'kategori': forms.Select(attrs={'class': 'form-select'}),
+            'deskripsi': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Tuliskan kronologi pelanggaran etik...'}),
+            'pelapor': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nama pelapor / sumber informasi'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+        }
+
+
+class SidangEtikForm(forms.ModelForm):
+    class Meta:
+        model = SidangEtik
+        fields = [
+            'nakes', 'pelanggaran', 'judul_sidang',
+            'tanggal_sidang', 'waktu_mulai', 'waktu_selesai',
+            'tempat', 'perangkat_sidang', 'status',
+            'hasil_investigasi', 'rekomendasi_pembinaan', 'tindak_lanjut',
+        ]
+        widgets = {
+            'nakes': forms.Select(attrs={'class': 'form-select'}),
+            'pelanggaran': forms.Select(attrs={'class': 'form-select'}),
+            'judul_sidang': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Agenda / Judul Sidang Etik'}),
+            'tanggal_sidang': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'waktu_mulai': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'waktu_selesai': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'tempat': forms.TextInput(attrs={'class': 'form-control'}),
+            'perangkat_sidang': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Ketua: ..., Sekretaris: ..., Anggota: ...'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'hasil_investigasi': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Temuan fakta, telaah bukti & saksi...'}),
+            'rekomendasi_pembinaan': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Teguran, pembinaan, penangguhan kewenangan...'}),
+            'tindak_lanjut': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Status eksekusi pembinaan...'}),
+        }
+
+
+class EvaluasiKinerjaEtikForm(forms.ModelForm):
+    class Meta:
+        model = EvaluasiKinerjaEtik
+        fields = [
+            'nakes', 'periode_tahun', 'periode_semester',
+            'predikat', 'status_kepatuhan',
+            'catatan_evaluasi', 'rekomendasi_kelanjutan', 'evaluator',
+        ]
+        widgets = {
+            'nakes': forms.Select(attrs={'class': 'form-select'}),
+            'periode_tahun': forms.NumberInput(attrs={'class': 'form-control', 'min': '2000', 'max': '2100'}),
+            'periode_semester': forms.Select(attrs={'class': 'form-select'}),
+            'predikat': forms.Select(attrs={'class': 'form-select'}),
+            'status_kepatuhan': forms.Select(attrs={'class': 'form-select'}),
+            'catatan_evaluasi': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Ulasan kepatuhan etika & perilaku klinis...'}),
+            'rekomendasi_kelanjutan': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Kelayakan perpanjangan SPK / RKK...'}),
+            'evaluator': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nama evaluator / penilai'}),
         }

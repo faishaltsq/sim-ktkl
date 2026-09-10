@@ -396,6 +396,24 @@
                         </a>
                     </li>
                 </ul>
+                <div class="nav-section mt-2">Sub Etik &amp; Disiplin</div>
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'pelanggaran_list' or request.resolver_match.url_name == 'pelanggaran_create' or request.resolver_match.url_name == 'pelanggaran_update' %}active{% endif %}" href="{% url 'nakes:pelanggaran_list' %}">
+                            <i class="bi bi-shield-exclamation"></i> Pelanggaran Etik
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'sidang_calendar' or request.resolver_match.url_name == 'sidang_create' or request.resolver_match.url_name == 'sidang_update' %}active{% endif %}" href="{% url 'nakes:sidang_calendar' %}">
+                            <i class="bi bi-calendar-event"></i> Sidang &amp; Pembinaan
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.resolver_match.url_name == 'evaluasi_etik_list' or request.resolver_match.url_name == 'evaluasi_etik_create' or request.resolver_match.url_name == 'evaluasi_etik_update' %}active{% endif %}" href="{% url 'nakes:evaluasi_etik_list' %}">
+                            <i class="bi bi-award"></i> Evaluasi Kinerja Etik
+                        </a>
+                    </li>
+                </ul>
                 <div class="nav-section mt-2">Laporan</div>
                 <ul class="nav flex-column">
                     <li class="nav-item">
@@ -474,6 +492,24 @@
                 <li class="nav-item">
                     <a class="nav-link {% if request.resolver_match.url_name == 'mutu_list' or request.resolver_match.url_name == 'mutu_create' or request.resolver_match.url_name == 'mutu_detail' or request.resolver_match.url_name == 'mutu_update' %}active{% endif %}" href="{% url 'nakes:mutu_list' %}">
                         <i class="bi bi-graph-up-arrow"></i> Mutu Layanan Klinis
+                    </a>
+                </li>
+            </ul>
+            <div class="nav-section mt-2">Sub Etik &amp; Disiplin</div>
+            <ul class="nav flex-column">
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'pelanggaran_list' or request.resolver_match.url_name == 'pelanggaran_create' or request.resolver_match.url_name == 'pelanggaran_update' %}active{% endif %}" href="{% url 'nakes:pelanggaran_list' %}">
+                        <i class="bi bi-shield-exclamation"></i> Pelanggaran Etik
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'sidang_calendar' or request.resolver_match.url_name == 'sidang_create' or request.resolver_match.url_name == 'sidang_update' %}active{% endif %}" href="{% url 'nakes:sidang_calendar' %}">
+                        <i class="bi bi-calendar-event"></i> Sidang &amp; Pembinaan
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link {% if request.resolver_match.url_name == 'evaluasi_etik_list' or request.resolver_match.url_name == 'evaluasi_etik_create' or request.resolver_match.url_name == 'evaluasi_etik_update' %}active{% endif %}" href="{% url 'nakes:evaluasi_etik_list' %}">
+                        <i class="bi bi-award"></i> Evaluasi Kinerja Etik
                     </a>
                 </li>
             </ul>

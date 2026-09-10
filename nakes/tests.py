@@ -6,7 +6,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 import openpyxl
 
-from .models import Nakes, AuditLog, Profesi, DokumenNakes, DokumenUmum, EvaluasiOPPE, EvaluasiMutuKlinis
+from .models import (
+    Nakes, AuditLog, Profesi, DokumenNakes, DokumenUmum,
+    EvaluasiOPPE, EvaluasiMutuKlinis,
+    PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik,
+)
 
 
 class ExcelImportQATest(TestCase):
@@ -496,4 +500,121 @@ class MutuKlinisTest(TestCase):
         res_del = self.client.post(url_del)
         self.assertEqual(res_del.status_code, 302)
         self.assertFalse(EvaluasiMutuKlinis.objects.filter(pk=mutu.pk).exists())
+
+
+class SubEtikTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='etikuser', password='password123')
+        self.client = Client()
+        self.client.login(username='etikuser', password='password123')
+        p, _ = Profesi.objects.get_or_create(nama='Radiografer')
+        self.nakes = Nakes.objects.create(
+            nama='Rian Radiologi',
+            profesi=p,
+            unit_kerja='Radiologi',
+            no_str='STR-ETIK-01',
+            masa_berlaku_str=datetime.date(2028, 1, 1),
+            no_sip='SIP-ETIK-01',
+            masa_berlaku_sip=datetime.date(2028, 1, 1),
+            created_by=self.user,
+        )
+
+    def test_pelanggaran_etik_crud(self):
+        # 1. Create
+        url_create = reverse('nakes:pelanggaran_create')
+        res = self.client.post(url_create, {
+            'nakes': self.nakes.pk,
+            'tanggal_kejadian': '2025-06-01',
+            'tanggal_lapor': '2025-06-02',
+            'kategori': 'Sedang',
+            'deskripsi': 'Dugaan kelalaian prosedur radiasi',
+            'pelapor': 'Kepala Instalasi Radiologi',
+            'status': 'Dalam Investigasi',
+        })
+        self.assertEqual(res.status_code, 302)
+        p = PelanggaranEtik.objects.get(nakes=self.nakes)
+        self.assertEqual(p.kategori, 'Sedang')
+        self.assertEqual(p.status, 'Dalam Investigasi')
+
+        # 2. List
+        url_list = reverse('nakes:pelanggaran_list')
+        res_list = self.client.get(url_list)
+        self.assertEqual(res_list.status_code, 200)
+        self.assertContains(res_list, 'Rian Radiologi')
+
+        # 3. Update
+        url_update = reverse('nakes:pelanggaran_update', args=[p.pk])
+        res_update = self.client.post(url_update, {
+            'nakes': self.nakes.pk,
+            'tanggal_kejadian': '2025-06-01',
+            'tanggal_lapor': '2025-06-02',
+            'kategori': 'Sedang',
+            'deskripsi': 'Dugaan kelalaian prosedur radiasi update',
+            'pelapor': 'Kepala Instalasi Radiologi',
+            'status': 'Diteruskan ke Sidang',
+        })
+        self.assertEqual(res_update.status_code, 302)
+        p.refresh_from_db()
+        self.assertEqual(p.status, 'Diteruskan ke Sidang')
+
+        # 4. Delete
+        url_delete = reverse('nakes:pelanggaran_delete', args=[p.pk])
+        res_del = self.client.post(url_delete)
+        self.assertEqual(res_del.status_code, 302)
+        self.assertFalse(PelanggaranEtik.objects.filter(pk=p.pk).exists())
+
+    def test_sidang_etik_calendar_and_api(self):
+        # Create sidang
+        sidang = SidangEtik.objects.create(
+            nakes=self.nakes,
+            judul_sidang='Sidang Etik Kode Etik Radiografer',
+            tanggal_sidang=datetime.date(2025, 7, 10),
+            waktu_mulai=datetime.time(9, 30),
+            waktu_selesai=datetime.time(11, 30),
+            tempat='Ruang Komite Medik',
+            status='Terjadwal',
+            hasil_investigasi='Pemeriksaan bukti rekaman radiologi',
+            rekomendasi_pembinaan='Teguran tertulis pertama',
+            created_by=self.user,
+        )
+
+        # Calendar page view
+        url_cal = reverse('nakes:sidang_calendar')
+        res_cal = self.client.get(url_cal)
+        self.assertEqual(res_cal.status_code, 200)
+        self.assertContains(res_cal, 'FullCalendar')
+
+        # JSON API events for calendar
+        url_api = reverse('nakes:sidang_events_api')
+        res_api = self.client.get(url_api)
+        self.assertEqual(res_api.status_code, 200)
+        data = res_api.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['title'], 'Sidang Etik Kode Etik Radiografer')
+        self.assertEqual(data[0]['extendedProps']['nakes'], 'Rian Radiologi')
+        self.assertEqual(data[0]['extendedProps']['rekomendasi_pembinaan'], 'Teguran tertulis pertama')
+
+    def test_evaluasi_kinerja_etik_crud(self):
+        url_create = reverse('nakes:evaluasi_etik_create')
+        res = self.client.post(url_create, {
+            'nakes': self.nakes.pk,
+            'periode_tahun': 2025,
+            'periode_semester': 1,
+            'predikat': 'Baik',
+            'status_kepatuhan': 'Patuh',
+            'catatan_evaluasi': 'Perilaku klinis baik dan sesuai etika profesi',
+            'rekomendasi_kelanjutan': 'Direkomendasikan perpanjang SPK',
+            'evaluator': 'Sub Komite Etik',
+        })
+        self.assertEqual(res.status_code, 302)
+        ev = EvaluasiKinerjaEtik.objects.get(nakes=self.nakes, periode_tahun=2025, periode_semester=1)
+        self.assertEqual(ev.predikat, 'Baik')
+        self.assertEqual(ev.status_kepatuhan, 'Patuh')
+
+        # List
+        url_list = reverse('nakes:evaluasi_etik_list')
+        res_list = self.client.get(url_list)
+        self.assertEqual(res_list.status_code, 200)
+        self.assertContains(res_list, 'Rian Radiologi')
+
 

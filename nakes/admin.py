@@ -1,5 +1,9 @@
 from django.contrib import admin
-from .models import Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi, EvaluasiOPPE, EvaluasiMutuKlinis
+from .models import (
+    Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi,
+    EvaluasiOPPE, EvaluasiMutuKlinis,
+    PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik,
+)
 
 
 @admin.register(Profesi)
@@ -52,3 +56,24 @@ class EvaluasiMutuKlinisAdmin(admin.ModelAdmin):
     list_display = ['nama_indikator', 'unit_kerja', 'periode_bulan', 'periode_tahun', 'standar_target', 'capaian']
     list_filter = ['periode_tahun', 'periode_bulan', 'unit_kerja']
     search_fields = ['nama_indikator', 'unit_kerja']
+
+
+@admin.register(PelanggaranEtik)
+class PelanggaranEtikAdmin(admin.ModelAdmin):
+    list_display = ['nakes', 'tanggal_kejadian', 'kategori', 'status', 'pelapor']
+    list_filter = ['kategori', 'status', 'tanggal_kejadian']
+    search_fields = ['nakes__nama', 'deskripsi', 'pelapor']
+
+
+@admin.register(SidangEtik)
+class SidangEtikAdmin(admin.ModelAdmin):
+    list_display = ['judul_sidang', 'nakes', 'tanggal_sidang', 'waktu_mulai', 'status', 'tempat']
+    list_filter = ['status', 'tanggal_sidang']
+    search_fields = ['judul_sidang', 'nakes__nama', 'hasil_investigasi', 'rekomendasi_pembinaan']
+
+
+@admin.register(EvaluasiKinerjaEtik)
+class EvaluasiKinerjaEtikAdmin(admin.ModelAdmin):
+    list_display = ['nakes', 'periode_tahun', 'periode_semester', 'predikat', 'status_kepatuhan', 'evaluator']
+    list_filter = ['periode_tahun', 'periode_semester', 'predikat', 'status_kepatuhan']
+    search_fields = ['nakes__nama', 'catatan_evaluasi', 'evaluator']

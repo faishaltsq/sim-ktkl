@@ -34,4 +34,20 @@ urlpatterns = [
     path('mutu/<int:pk>/', views.mutu_detail, name='mutu_detail'),
     path('mutu/<int:pk>/edit/', views.mutu_update, name='mutu_update'),
     path('mutu/<int:pk>/hapus/', views.mutu_delete, name='mutu_delete'),
+
+    path('etik/pelanggaran/', views.pelanggaran_list, name='pelanggaran_list'),
+    path('etik/pelanggaran/tambah/', views.pelanggaran_create, name='pelanggaran_create'),
+    path('etik/pelanggaran/<int:pk>/edit/', views.pelanggaran_update, name='pelanggaran_update'),
+    path('etik/pelanggaran/<int:pk>/hapus/', views.pelanggaran_delete, name='pelanggaran_delete'),
+
+    path('etik/sidang/', views.sidang_calendar, name='sidang_calendar'),
+    path('etik/sidang/api/events/', views.sidang_events_api, name='sidang_events_api'),
+    path('etik/sidang/tambah/', views.sidang_create, name='sidang_create'),
+    path('etik/sidang/<int:pk>/edit/', views.sidang_update, name='sidang_update'),
+    path('etik/sidang/<int:pk>/hapus/', views.sidang_delete, name='sidang_delete'),
+
+    path('etik/evaluasi/', views.evaluasi_etik_list, name='evaluasi_etik_list'),
+    path('etik/evaluasi/tambah/', views.evaluasi_etik_create, name='evaluasi_etik_create'),
+    path('etik/evaluasi/<int:pk>/edit/', views.evaluasi_etik_update, name='evaluasi_etik_update'),
+    path('etik/evaluasi/<int:pk>/hapus/', views.evaluasi_etik_delete, name='evaluasi_etik_delete'),
 ]
