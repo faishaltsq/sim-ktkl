@@ -1,22 +1,39 @@
 {% extends "base.html" %}
-
 {% block title %}Hapus {{ nakes.nama }} - VIRA NAKES{% endblock %}
-{% block page_title %}Konfirmasi Penghapusan{% endblock %}
-{% block page_title_mobile %}Hapus Data{% endblock %}
 
 {% block content %}
-<div class="card mx-auto" style="max-width: 480px;">
-    <div class="card-body p-4">
-        <div style="color:var(--danger);font-size:1.5rem;margin-bottom:0.75rem;">
-            <i class="bi bi-exclamation-triangle"></i>
+<div class="page-header-box domain-main mb-3">
+    <div>
+        <h1 class="page-title-text">Konfirmasi Hapus Data Praktisi</h1>
+        <p class="page-subtitle-text">Tindakan ini bersifat permanen dan tidak dapat dibatalkan</p>
+    </div>
+</div>
+
+<div class="card mx-auto" style="max-width:520px;">
+    <div class="card-header text-center">
+        <i class="bi bi-exclamation-triangle me-1" style="color:var(--danger);"></i> Konfirmasi Penghapusan
+    </div>
+    <div class="card-body p-4 text-center">
+        <div style="color:var(--danger);font-size:3rem;margin-bottom:0.75rem;">
+            <i class="bi bi-exclamation-triangle-fill"></i>
         </div>
-        <p style="font-size:0.9rem;">Anda akan menghapus data <strong>{{ nakes.nama }}</strong> ({{ nakes.profesi }}).</p>
-        <p style="color:var(--text-secondary);font-size:0.82rem;">Tindakan ini bersifat permanen. Semua dokumen yang terkait juga akan dihapus.</p>
+        <p style="font-size:0.95rem;font-weight:600;margin-bottom:0.5rem;">
+            Hapus data <strong>{{ nakes.nama }}</strong>?
+        </p>
+        <p style="color:var(--text-secondary);font-size:0.82rem;">
+            {{ nakes.profesi.nama }}
+        </p>
+        <div class="alert alert-danger py-2 text-start" style="font-size:0.8rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            Semua dokumen, evaluasi, dan data terkait praktisi ini akan ikut dihapus secara permanen.
+        </div>
         <form method="post">
             {% csrf_token %}
-            <div class="d-flex gap-2 mt-3">
-                <button type="submit" class="btn btn-danger flex-grow-1 flex-md-grow-0" style="min-width:100px;">Hapus</button>
-                <a href="{% url 'nakes:detail' nakes.pk %}" class="btn btn-outline-secondary flex-grow-1 flex-md-grow-0">Batal</a>
+            <div class="d-flex gap-2 mt-4 justify-content-center">
+                <button type="submit" class="btn btn-danger" style="min-width:160px;">
+                    <i class="bi bi-trash me-1"></i>Ya, Hapus Sekarang
+                </button>
+                <a href="{% url 'nakes:list' %}" class="btn btn-outline-secondary" style="min-width:100px;">Batal</a>
             </div>
         </form>
     </div>

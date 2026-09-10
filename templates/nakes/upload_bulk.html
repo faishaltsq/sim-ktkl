@@ -1,11 +1,16 @@
 {% extends "base.html" %}
-
-{% block title %}Import Bulk - VIRA NAKES{% endblock %}
-{% block page_title %}Import Bulk Excel{% endblock %}
-{% block page_title_mobile %}Import Bulk{% endblock %}
+{% block title %}Import Bulk Nakes - VIRA NAKES{% endblock %}
 
 {% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Import Bulk Tenaga Kesehatan</h1>
+        <p class="page-subtitle-text">Unggah Template Excel untuk Input Data Massal</p>
+    </div>
+</div>
+
 <div class="row g-3">
+    <!-- LEFT: UPLOAD FORM -->
     <div class="col-12 col-lg-7">
         <div class="card">
             <div class="card-header">
@@ -21,7 +26,7 @@
                             Hanya file <code>.xlsx</code>. Gunakan template resmi agar format sesuai.
                         </div>
                     </div>
-                    <div class="d-flex gap-2">
+                    <div class="d-flex gap-2 flex-wrap">
                         <button type="submit" class="btn btn-primary btn-sm px-4">
                             <i class="bi bi-upload me-1"></i> Import Data
                         </button>
@@ -34,31 +39,46 @@
         </div>
     </div>
 
+    <!-- RIGHT: GUIDE -->
     <div class="col-12 col-lg-5">
         <div class="card h-100">
             <div class="card-header">
                 <i class="bi bi-info-circle me-1"></i> Panduan Import
             </div>
-            <div class="card-body p-4" style="font-size:0.82rem;">
-                <ol class="ps-3 mb-0" style="line-height:2;">
-                    <li>Download template Excel resmi (sudah dilengkapi dropdown pilihan).</li>
-                    <li>Isi data mulai dari baris ke-2 (baris contoh warna pastel dapat ditimpa/dihapus).</li>
-                    <li>Kolom <strong>no_str</strong> dan <strong>no_sip</strong> harus unik.</li>
-                    <li>Format tanggal: <code>YYYY-MM-DD</code> atau <code>DD/MM/YYYY</code> (contoh: <code>2026-12-31</code> atau <code>31/12/2026</code>).</li>
-                    <li>Upload file dan klik Import.</li>
-                </ol>
+            <div class="card-body p-4" style="font-size:0.83rem;">
+                <ul class="list-unstyled mb-4" style="line-height:1.9;">
+                    <li class="d-flex align-items-start gap-2 mb-1">
+                        <i class="bi bi-check2-circle mt-1 flex-shrink-0" style="color:#059669;font-size:1rem;"></i>
+                        <span>Download template Excel resmi (sudah dilengkapi dropdown pilihan).</span>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-1">
+                        <i class="bi bi-check2-circle mt-1 flex-shrink-0" style="color:#059669;font-size:1rem;"></i>
+                        <span>Isi data mulai dari baris ke-2 (baris contoh warna pastel dapat ditimpa).</span>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-1">
+                        <i class="bi bi-check2-circle mt-1 flex-shrink-0" style="color:#059669;font-size:1rem;"></i>
+                        <span>Kolom <strong>no_str</strong> dan <strong>no_sip</strong> harus unik di seluruh sistem.</span>
+                    </li>
+                    <li class="d-flex align-items-start gap-2 mb-1">
+                        <i class="bi bi-check2-circle mt-1 flex-shrink-0" style="color:#059669;font-size:1rem;"></i>
+                        <span>Format tanggal: <code>YYYY-MM-DD</code> atau <code>DD/MM/YYYY</code>.</span>
+                    </li>
+                    <li class="d-flex align-items-start gap-2">
+                        <i class="bi bi-check2-circle mt-1 flex-shrink-0" style="color:#059669;font-size:1rem;"></i>
+                        <span>Upload file dan klik tombol <strong>Import Data</strong>.</span>
+                    </li>
+                </ul>
 
                 <hr style="border-color:var(--border);">
 
                 <div style="color:var(--text-secondary);">
-                    <div class="fw-600 mb-2" style="font-weight:600;">Nilai yang diperbolehkan:</div>
-                    <div class="mb-1"><span class="fw-500" style="font-weight:500;">profesi:</span><br>
-                        Sesuai daftar di sistem atau input profesi baru
-                    </div>
-                    <div class="mb-1 mt-2"><span class="fw-500" style="font-weight:500;">status_kredensial:</span><br>
+                    <div style="font-weight:700;margin-bottom:0.5rem;">Nilai yang diperbolehkan:</div>
+                    <div class="mb-2">
+                        <span style="font-weight:600;font-size:0.78rem;">status_kredensial:</span><br>
                         <code>Belum Pengajuan</code> <code>Dalam Proses</code> <code>Selesai</code>
                     </div>
-                    <div class="mt-2"><span class="fw-500" style="font-weight:500;">kewenangan_klinis:</span><br>
+                    <div>
+                        <span style="font-weight:600;font-size:0.78rem;">kewenangan_klinis:</span><br>
                         <code>Aktif</code> <code>Evaluasi</code> <code>Proses</code> <code>Tidak Aktif</code>
                     </div>
                 </div>

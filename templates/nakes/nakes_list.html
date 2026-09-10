@@ -1,96 +1,118 @@
 {% extends "base.html" %}
-
-{% block title %}Data Nakes - VIRA NAKES{% endblock %}
-{% block page_title %}Data Tenaga Kesehatan{% endblock %}
+{% block title %}Data Tenaga Kesehatan - VIRA NAKES{% endblock %}
+{% block page_title %}Direktori Tenaga Kesehatan Lain{% endblock %}
 {% block page_title_mobile %}Data Nakes{% endblock %}
 
 {% block content %}
-<div class="card mb-3">
-    <div class="card-body py-2 px-3">
-        <form method="get" class="row g-2 align-items-center">
-            <div class="col-12 col-md-8">
-                {{ form.q }}
-            </div>
-            <div class="col-6 col-md-2">
-                <button type="submit" class="btn btn-outline-primary btn-sm w-100">Cari</button>
-            </div>
-            <div class="col-6 col-md-2">
-                <a href="{% url 'nakes:create' %}" class="btn btn-primary btn-sm w-100">Tambah</a>
-            </div>
-        </form>
-        <div class="d-flex gap-2 mt-2">
-            <a href="{% url 'nakes:upload_bulk' %}" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-upload me-1"></i>Import Bulk
-            </a>
-            <a href="{% url 'nakes:download_template' %}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-file-earmark-arrow-down me-1"></i>Download Template
-            </a>
-            <a href="{% url 'nakes:export' %}" class="btn btn-outline-secondary btn-sm">
-                <i class="bi bi-download me-1"></i>Export
-            </a>
-        </div>
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Direktori Tenaga Kesehatan Lain</h1>
+        <p class="page-subtitle-text">Anggota Komite KTKL — Data STR, SIP &amp; Status Kredensial Aktif</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'nakes:upload_bulk' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload me-1"></i>Import Bulk</a>
+        <a href="{% url 'nakes:download_template' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Template</a>
+        <a href="{% url 'nakes:export' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-download me-1"></i>Export</a>
+        <a href="{% url 'nakes:create' %}" class="btn btn-sm btn-primary"><i class="bi bi-person-plus me-1"></i>Tambah Nakes</a>
     </div>
 </div>
 
-<div class="d-none d-md-block">
+<div class="card mb-3">
+    <div class="card-body py-2 px-3">
+        <form method="get">
+            <div class="d-flex gap-2 align-items-center flex-wrap">
+                <div class="flex-grow-1" style="min-width:220px;">
+                    {{ form.q }}
+                </div>
+                <button type="submit" class="btn btn-outline-primary btn-sm">
+                    <i class="bi bi-search me-1"></i>Cari
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{% if q %}
+<p class="text-muted" style="font-size:0.8rem;">Menampilkan hasil pencarian untuk <strong>"{{ q }}"</strong></p>
+{% endif %}
+
+<!-- DESKTOP TABLE -->
+<div class="d-none d-lg-block">
     <div class="card">
         <div class="table-responsive">
             <table class="table table-hover mb-0">
                 <thead>
                     <tr>
-                        <th>Nama</th>
+                        <th>Nama Praktisi</th>
                         <th>Profesi</th>
                         <th>Unit Kerja</th>
-                        <th>STR</th>
-                        <th>Berlaku</th>
-                        <th>SIP</th>
-                        <th>Berlaku</th>
-                        <th>Kredensial</th>
-                        <th></th>
+                        <th>STR &amp; Masa Berlaku</th>
+                        <th>SIP &amp; Masa Berlaku</th>
+                        <th>Status</th>
+                        <th class="text-end">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for n in nakes_list %}
                     <tr>
-                        <td><a href="{% url 'nakes:detail' n.pk %}" style="text-decoration:none;font-weight:500;">{{ n.nama }}</a></td>
-                        <td>{{ n.profesi }}</td>
-                        <td>{{ n.unit_kerja }}</td>
-                        <td><code>{{ n.no_str }}</code></td>
                         <td>
-                            {% if n.str_sisa_hari < 0 %}
-                                <span class="badge badge-status-danger">{{ n.masa_berlaku_str }}</span>
-                            {% elif n.str_sisa_hari <= 180 %}
-                                <span class="badge badge-status-warning">{{ n.masa_berlaku_str }}</span>
-                            {% else %}
-                                <span style="color:var(--text-secondary);">{{ n.masa_berlaku_str }}</span>
-                            {% endif %}
+                            <a href="{% url 'nakes:detail' n.pk %}" class="fw-bold text-decoration-none" style="color:var(--text-primary);">
+                                {{ n.nama }}
+                            </a>
                         </td>
-                        <td><code>{{ n.no_sip }}</code></td>
                         <td>
-                            {% if n.sip_sisa_hari < 0 %}
-                                <span class="badge badge-status-danger">{{ n.masa_berlaku_sip }}</span>
-                            {% elif n.sip_sisa_hari <= 180 %}
-                                <span class="badge badge-status-warning">{{ n.masa_berlaku_sip }}</span>
-                            {% else %}
-                                <span style="color:var(--text-secondary);">{{ n.masa_berlaku_sip }}</span>
-                            {% endif %}
+                            <span class="badge badge-status-info">{{ n.profesi.nama }}</span>
+                        </td>
+                        <td style="color:var(--text-secondary);font-size:0.8rem;">{{ n.unit_kerja }}</td>
+                        <td>
+                            <code style="font-size:0.72rem;">{{ n.no_str }}</code>
+                            <div style="margin-top:3px;">
+                                {% if n.str_sisa_hari < 0 %}
+                                <span class="badge badge-status-danger"><i class="bi bi-x-circle me-1"></i>Expired</span>
+                                {% elif n.str_sisa_hari <= 90 %}
+                                <span class="badge badge-status-danger">{{ n.str_sisa_hari }}h</span>
+                                {% elif n.str_sisa_hari <= 180 %}
+                                <span class="badge badge-status-warning">{{ n.str_sisa_hari }}h</span>
+                                {% else %}
+                                <span class="badge badge-status-success"><i class="bi bi-check me-1"></i>Aktif</span>
+                                {% endif %}
+                            </div>
+                        </td>
+                        <td>
+                            <code style="font-size:0.72rem;">{{ n.no_sip }}</code>
+                            <div style="margin-top:3px;">
+                                {% if n.sip_sisa_hari < 0 %}
+                                <span class="badge badge-status-danger"><i class="bi bi-x-circle me-1"></i>Expired</span>
+                                {% elif n.sip_sisa_hari <= 90 %}
+                                <span class="badge badge-status-danger">{{ n.sip_sisa_hari }}h</span>
+                                {% elif n.sip_sisa_hari <= 180 %}
+                                <span class="badge badge-status-warning">{{ n.sip_sisa_hari }}h</span>
+                                {% else %}
+                                <span class="badge badge-status-success"><i class="bi bi-check me-1"></i>Aktif</span>
+                                {% endif %}
+                            </div>
                         </td>
                         <td>
                             {% if n.status_kredensial == "Selesai" %}
-                                <span class="badge badge-status-success">{{ n.status_kredensial }}</span>
+                            <span class="badge badge-status-success">Selesai</span>
                             {% elif n.status_kredensial == "Dalam Proses" %}
-                                <span class="badge badge-status-info">{{ n.status_kredensial }}</span>
+                            <span class="badge badge-status-warning">Dalam Proses</span>
                             {% else %}
-                                <span class="badge badge-status-neutral">{{ n.status_kredensial }}</span>
+                            <span class="badge badge-status-neutral">{{ n.status_kredensial }}</span>
                             {% endif %}
                         </td>
-                        <td>
-                            <a href="{% url 'nakes:update' n.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.75rem;">Edit</a>
+                        <td class="text-end">
+                            <a href="{% url 'nakes:update' n.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.7rem;padding:0.2rem 0.6rem;"><i class="bi bi-pencil"></i></a>
+                            <a href="{% url 'nakes:detail' n.pk %}" class="btn btn-sm btn-primary ms-1" style="font-size:0.7rem;padding:0.2rem 0.6rem;">Detail</a>
                         </td>
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="9" class="text-center py-4" style="color:var(--text-muted);">Belum ada data tenaga kesehatan.</td>
+                        <td colspan="7" class="text-center py-5">
+                            <i class="bi bi-inbox fs-2 text-muted d-block mb-2"></i>
+                            <div class="text-muted">Belum ada data tenaga kesehatan{% if q %} untuk "{{ q }}"{% endif %}.</div>
+                            <a href="{% url 'nakes:create' %}" class="btn btn-sm btn-primary mt-2">Tambah Nakes Baru</a>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -99,55 +121,59 @@
     </div>
 </div>
 
-<div class="d-md-none">
+<!-- MOBILE CARDS -->
+<div class="d-lg-none">
     {% for n in nakes_list %}
     <div class="card mb-2">
         <div class="card-body p-3">
             <div class="d-flex justify-content-between align-items-start mb-2">
                 <div>
-                    <a href="{% url 'nakes:detail' n.pk %}" style="font-weight:600;text-decoration:none;color:var(--text-primary);font-size:0.9rem;">{{ n.nama }}</a>
-                    <div style="color:var(--text-muted);font-size:0.78rem;">{{ n.profesi }} &middot; {{ n.unit_kerja }}</div>
+                    <a href="{% url 'nakes:detail' n.pk %}" class="fw-bold text-decoration-none d-block mb-1" style="color:var(--text-primary);font-size:0.88rem;">{{ n.nama }}</a>
+                    <div class="d-flex gap-1 flex-wrap">
+                        <span class="badge badge-status-info">{{ n.profesi.nama }}</span>
+                        {% if n.status_kredensial == "Selesai" %}
+                        <span class="badge badge-status-success">Selesai</span>
+                        {% elif n.status_kredensial == "Dalam Proses" %}
+                        <span class="badge badge-status-warning">Dalam Proses</span>
+                        {% else %}
+                        <span class="badge badge-status-neutral">{{ n.status_kredensial }}</span>
+                        {% endif %}
+                    </div>
+                    <div class="text-muted mt-1" style="font-size:0.72rem;">{{ n.unit_kerja }}</div>
                 </div>
-                <a href="{% url 'nakes:update' n.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;">Edit</a>
+                <a href="{% url 'nakes:detail' n.pk %}" class="btn btn-sm btn-primary" style="font-size:0.72rem;">Detail</a>
             </div>
-            <div class="row g-2" style="font-size:0.78rem;">
-                <div class="col-6">
-                    <span style="color:var(--text-muted);">STR</span><br>
-                    <code>{{ n.no_str }}</code><br>
+            <div class="d-flex gap-3 pt-2 border-top" style="font-size:0.75rem;border-color:var(--border)!important;">
+                <div>
+                    <span class="text-muted">STR</span>
+                    <span class="font-mono d-block" style="font-size:0.7rem;">{{ n.no_str }}</span>
                     {% if n.str_sisa_hari < 0 %}
-                        <span class="badge badge-status-danger mt-1">{{ n.masa_berlaku_str }}</span>
+                    <span class="badge badge-status-danger" style="margin-top:2px;">Expired</span>
                     {% elif n.str_sisa_hari <= 180 %}
-                        <span class="badge badge-status-warning mt-1">{{ n.masa_berlaku_str }}</span>
+                    <span class="badge badge-status-warning" style="margin-top:2px;">{{ n.str_sisa_hari }}h</span>
                     {% else %}
-                        <span style="color:var(--text-secondary);">s/d {{ n.masa_berlaku_str }}</span>
+                    <span class="badge badge-status-success" style="margin-top:2px;">Aktif</span>
                     {% endif %}
                 </div>
-                <div class="col-6">
-                    <span style="color:var(--text-muted);">SIP</span><br>
-                    <code>{{ n.no_sip }}</code><br>
+                <div>
+                    <span class="text-muted">SIP</span>
+                    <span class="font-mono d-block" style="font-size:0.7rem;">{{ n.no_sip }}</span>
                     {% if n.sip_sisa_hari < 0 %}
-                        <span class="badge badge-status-danger mt-1">{{ n.masa_berlaku_sip }}</span>
+                    <span class="badge badge-status-danger" style="margin-top:2px;">Expired</span>
                     {% elif n.sip_sisa_hari <= 180 %}
-                        <span class="badge badge-status-warning mt-1">{{ n.masa_berlaku_sip }}</span>
+                    <span class="badge badge-status-warning" style="margin-top:2px;">{{ n.sip_sisa_hari }}h</span>
                     {% else %}
-                        <span style="color:var(--text-secondary);">s/d {{ n.masa_berlaku_sip }}</span>
+                    <span class="badge badge-status-success" style="margin-top:2px;">Aktif</span>
                     {% endif %}
                 </div>
-            </div>
-            <div class="mt-2">
-                {% if n.status_kredensial == "Selesai" %}
-                    <span class="badge badge-status-success">{{ n.status_kredensial }}</span>
-                {% elif n.status_kredensial == "Dalam Proses" %}
-                    <span class="badge badge-status-info">{{ n.status_kredensial }}</span>
-                {% else %}
-                    <span class="badge badge-status-neutral">{{ n.status_kredensial }}</span>
-                {% endif %}
-                <span style="color:var(--text-muted);font-size:0.72rem;margin-left:0.25rem;">{{ n.kewenangan_klinis }}</span>
             </div>
         </div>
     </div>
     {% empty %}
-    <div class="text-center py-4" style="color:var(--text-muted);">Belum ada data.</div>
+    <div class="text-center py-5 text-muted">
+        <i class="bi bi-inbox fs-2 d-block mb-2"></i>
+        Belum ada data nakes. <a href="{% url 'nakes:create' %}">Tambah sekarang</a>.
+    </div>
     {% endfor %}
 </div>
 {% endblock %}

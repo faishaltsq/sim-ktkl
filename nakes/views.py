@@ -5,7 +5,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.db import transaction
-from django.db.models import Q
+from django.db.models import Q, Count
 from django.http import HttpResponse, FileResponse, JsonResponse
 from django.urls import reverse
 from openpyxl import Workbook, load_workbook
@@ -148,10 +148,13 @@ def log_audit(user, aksi, obj, detail=''):
 @login_required
 def dashboard(request):
     today = date.today()
-    nakes_list = Nakes.objects.all()
+    nakes_list = Nakes.objects.select_related('profesi').all()
     total = nakes_list.count()
     kredensial_selesai = nakes_list.filter(status_kredensial='Selesai').count()
     kewenangan_aktif = nakes_list.filter(kewenangan_klinis='Aktif').count()
+
+    expired_count = 0
+    near_expiry_count = 0
 
     warnings = []
     for n in nakes_list:
@@ -159,15 +162,17 @@ def dashboard(request):
             exp = getattr(n, field)
             sisa = (exp - today).days
             if sisa < 0:
+                expired_count += 1
                 warnings.append({
                     'level': 'danger',
                     'nakes': n,
                     'doc': label,
                     'tanggal': exp,
                     'sisa': sisa,
-                     'msg': f'{n.nama} ({n.profesi.nama}) - {label} sudah kedaluwarsa sejak {exp}',
+                    'msg': f'{n.nama} ({n.profesi.nama}) - {label} sudah kedaluwarsa sejak {exp}',
                 })
             elif sisa <= 180:
+                near_expiry_count += 1
                 warnings.append({
                     'level': 'warning',
                     'nakes': n,
@@ -179,11 +184,25 @@ def dashboard(request):
 
     warnings.sort(key=lambda x: x['sisa'])
 
+    import json
+    profesi_stats = list(
+        Profesi.objects.annotate(jumlah=Count('nakes_list'))
+        .filter(jumlah__gt=0)
+        .order_by('-jumlah')
+        .values('nama', 'jumlah')
+    )
+    profesi_labels = json.dumps([p['nama'] for p in profesi_stats])
+    profesi_values = json.dumps([p['jumlah'] for p in profesi_stats])
+
     context = {
         'total': total,
         'kredensial_selesai': kredensial_selesai,
         'kewenangan_aktif': kewenangan_aktif,
+        'expired_count': expired_count,
+        'near_expiry_count': near_expiry_count,
         'warnings': warnings,
+        'profesi_labels': profesi_labels,
+        'profesi_values': profesi_values,
     }
     return render(request, 'nakes/dashboard.html', context)
 

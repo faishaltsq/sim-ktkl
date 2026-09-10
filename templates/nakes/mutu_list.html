@@ -1,31 +1,40 @@
 {% extends "base.html" %}
-
 {% block title %}Mutu Layanan Klinis - VIRA NAKES{% endblock %}
-{% block page_title %}Evaluasi Mutu Layanan Klinis{% endblock %}
-{% block page_title_mobile %}Mutu Klinis{% endblock %}
 
 {% block content %}
+<div class="page-header-box domain-mutu">
+    <div>
+        <h1 class="page-title-text">Evaluasi Mutu Layanan Klinis</h1>
+        <p class="page-subtitle-text">Audit Pencapaian Indikator Mutu Unit Kerja RS</p>
+    </div>
+    <a href="{% url 'nakes:mutu_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-plus-lg me-1"></i> Tambah Indikator
+    </a>
+</div>
+
+<!-- STAT MINI CARDS -->
 <div class="row g-3 mb-3">
-    <div class="col-6 col-md-4">
-        <div class="card p-3">
-            <div style="font-size:0.75rem;color:var(--text-muted);">Total Indikator Mutu</div>
-            <div style="font-size:1.5rem;font-weight:700;">{{ total_count }}</div>
+    <div class="col-4">
+        <div class="card p-3 text-center">
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Total Indikator</div>
+            <div style="font-size:1.75rem;font-weight:800;color:var(--text-primary);">{{ total_count }}</div>
         </div>
     </div>
-    <div class="col-6 col-md-4">
-        <div class="card p-3">
-            <div style="font-size:0.75rem;color:var(--text-muted);">Tercapai Target</div>
-            <div style="font-size:1.5rem;font-weight:700;color:#2e7d32;">{{ tercapai_count }}</div>
+    <div class="col-4">
+        <div class="card p-3 text-center">
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Tercapai</div>
+            <div style="font-size:1.75rem;font-weight:800;color:#059669;">{{ tercapai_count }}</div>
         </div>
     </div>
-    <div class="col-12 col-md-4">
-        <div class="card p-3">
-            <div style="font-size:0.75rem;color:var(--text-muted);">Belum Tercapai</div>
-            <div style="font-size:1.5rem;font-weight:700;color:#c62828;">{{ belum_tercapai_count }}</div>
+    <div class="col-4">
+        <div class="card p-3 text-center">
+            <div style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.05em;font-weight:600;">Belum Tercapai</div>
+            <div style="font-size:1.75rem;font-weight:800;color:#DC2626;">{{ belum_tercapai_count }}</div>
         </div>
     </div>
 </div>
 
+<!-- FILTER -->
 <div class="card mb-3">
     <div class="card-body py-2 px-3">
         <form method="get" class="row g-2 align-items-center">
@@ -40,7 +49,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-3 col-md-2">
+            <div class="col-6 col-md-2">
                 <select name="tahun" class="form-select form-select-sm">
                     <option value="">Semua Tahun</option>
                     {% for y in years %}
@@ -48,7 +57,7 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-3 col-md-2">
+            <div class="col-6 col-md-2">
                 <select name="bulan" class="form-select form-select-sm">
                     <option value="">Semua Bulan</option>
                     {% for b_val, b_name in bulan_choices %}
@@ -56,16 +65,19 @@
                     {% endfor %}
                 </select>
             </div>
-            <div class="col-12 col-md-2 d-flex gap-1">
-                <button type="submit" class="btn btn-outline-primary btn-sm flex-grow-1">Filter</button>
+            <div class="col-6 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-outline-primary btn-sm flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
                 <a href="{% url 'nakes:mutu_create' %}" class="btn btn-primary btn-sm flex-grow-1 text-nowrap">
-                    <i class="bi bi-plus-lg"></i> Tambah
+                    <i class="bi bi-plus-lg"></i>
                 </a>
             </div>
         </form>
     </div>
 </div>
 
+<!-- DESKTOP TABLE -->
 <div class="d-none d-md-block">
     <div class="card">
         <div class="table-responsive">
@@ -75,8 +87,8 @@
                         <th>Indikator Mutu</th>
                         <th>Unit Kerja</th>
                         <th>Periode</th>
-                        <th>Target</th>
-                        <th>Capaian</th>
+                        <th>Target %</th>
+                        <th>Capaian %</th>
                         <th>Status</th>
                         <th>PIC</th>
                         <th class="text-end">Aksi</th>
@@ -86,23 +98,23 @@
                     {% for m in mutu_list %}
                     <tr>
                         <td>
-                            <a href="{% url 'nakes:mutu_detail' m.pk %}" style="text-decoration:none;font-weight:600;">
+                            <a href="{% url 'nakes:mutu_detail' m.pk %}" style="text-decoration:none;font-weight:600;color:var(--text-primary);">
                                 {{ m.nama_indikator }}
                             </a>
                         </td>
-                        <td>{{ m.unit_kerja }}</td>
+                        <td style="color:var(--text-secondary);font-size:0.8rem;">{{ m.unit_kerja }}</td>
                         <td><span class="badge badge-status-neutral">{{ m.get_periode_bulan_display }} {{ m.periode_tahun }}</span></td>
                         <td><strong>{{ m.standar_target }}%</strong></td>
                         <td>
-                            <strong style="{% if m.is_tercapai %}color:#2e7d32;{% else %}color:#c62828;{% endif %}">
+                            <strong style="{% if m.is_tercapai %}color:#059669;{% else %}color:#DC2626;{% endif %}">
                                 {{ m.capaian }}%
                             </strong>
                         </td>
                         <td>
                             {% if m.is_tercapai %}
-                            <span class="badge badge-status-success">Tercapai</span>
+                            <span class="badge badge-status-success"><i class="bi bi-check-circle me-1"></i>Tercapai</span>
                             {% else %}
-                            <span class="badge badge-status-danger">Tidak Tercapai</span>
+                            <span class="badge badge-status-danger"><i class="bi bi-x-circle me-1"></i>Tidak Tercapai</span>
                             {% endif %}
                         </td>
                         <td style="color:var(--text-secondary);font-size:0.8rem;">{{ m.penanggung_jawab|default:"-" }}</td>
@@ -119,7 +131,15 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center py-4" style="color:var(--text-muted);">Belum ada data evaluasi mutu klinis.</td>
+                        <td colspan="8" class="text-center py-5">
+                            <div style="color:var(--text-muted);">
+                                <i class="bi bi-graph-up d-block mb-2" style="font-size:2rem;"></i>
+                                Belum ada data evaluasi mutu klinis.<br>
+                                <a href="{% url 'nakes:mutu_create' %}" class="btn btn-primary btn-sm mt-2">
+                                    <i class="bi bi-plus-lg me-1"></i>Tambah Indikator Pertama
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -128,6 +148,7 @@
     </div>
 </div>
 
+<!-- MOBILE CARDS -->
 <div class="d-md-none">
     {% for m in mutu_list %}
     <div class="card mb-2">
@@ -147,9 +168,15 @@
                 <span class="badge badge-status-danger">Tidak</span>
                 {% endif %}
             </div>
-            <div class="d-flex justify-content-between align-items-center py-2 border-top border-bottom" style="border-color:var(--border) !important;font-size:0.8rem;">
-                <div>Target: <strong>{{ m.standar_target }}%</strong></div>
-                <div>Capaian: <strong style="{% if m.is_tercapai %}color:#2e7d32;{% else %}color:#c62828;{% endif %}">{{ m.capaian }}%</strong></div>
+            <div class="row g-0 py-2 border-top border-bottom" style="border-color:var(--border) !important;font-size:0.82rem;">
+                <div class="col-6 text-center">
+                    <div style="color:var(--text-muted);font-size:0.7rem;">Target</div>
+                    <div style="font-weight:700;">{{ m.standar_target }}%</div>
+                </div>
+                <div class="col-6 text-center">
+                    <div style="color:var(--text-muted);font-size:0.7rem;">Capaian</div>
+                    <div style="font-weight:700;{% if m.is_tercapai %}color:#059669;{% else %}color:#DC2626;{% endif %}">{{ m.capaian }}%</div>
+                </div>
             </div>
             <div class="d-flex justify-content-end gap-1 mt-2">
                 <a href="{% url 'nakes:mutu_detail' m.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;">Detail</a>
@@ -158,7 +185,10 @@
         </div>
     </div>
     {% empty %}
-    <div class="text-center py-4" style="color:var(--text-muted);">Belum ada data evaluasi mutu klinis.</div>
+    <div class="text-center py-5" style="color:var(--text-muted);">
+        <i class="bi bi-graph-up d-block mb-2" style="font-size:2rem;"></i>
+        Belum ada data evaluasi mutu klinis.
+    </div>
     {% endfor %}
 </div>
 {% endblock %}

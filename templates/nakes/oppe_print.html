@@ -1,13 +1,11 @@
 {% extends "base.html" %}
 
 {% block title %}Lembar OPPE - {{ oppe.nakes.nama }} {{ oppe.tahun }} - VIRA NAKES{% endblock %}
-{% block page_title %}Lembar Penilaian OPPE{% endblock %}
-{% block page_title_mobile %}Cetak OPPE{% endblock %}
 
 {% block extra_css %}
 <style>
 @media print {
-    .sidebar-desktop, .offcanvas, nav.navbar, .top-bar, .btn-cetak-area, .alert { display: none !important; }
+    .sidebar-desktop, .offcanvas, nav.navbar, .top-bar, .btn-cetak-area, .alert, .mobile-topbar { display: none !important; }
     .main-content { margin: 0 !important; padding: 0 !important; }
     .content-area { padding: 0 !important; }
     .print-sheet { box-shadow: none !important; margin: 0 !important; border: none !important; }
@@ -17,21 +15,80 @@
     background: white;
     max-width: 850px;
     margin: 0 auto;
-    padding: 24px;
-    border: 1px solid #e0e0e0;
-    border-radius: 8px;
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow);
 }
-.print-header { text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 16px; }
-.print-header .rs-name { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; }
-.print-header .rs-sub { font-size: 0.75rem; color: #555; }
-.form-title { font-size: 0.95rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 4px; }
-.tabel-indikator th, .tabel-indikator td { padding: 4px 8px; vertical-align: middle; font-size: 0.78rem; border: 1px solid #aaa; }
-.tabel-indikator th { background: #f5f5f5; font-weight: 600; }
-.tabel-indikator td.skor-val { text-align: center; font-weight: 700; }
-.section-header td { background: #e8f5e9; font-weight: 700; font-size: 0.77rem; }
-.grade-box { border: 2px solid #333; padding: 10px 20px; display: inline-block; min-width: 80px; text-align: center; }
-.ttd-table td { vertical-align: top; font-size: 0.75rem; text-align: center; padding: 8px 12px; }
-.ttd-line { border-top: 1px solid #333; margin-top: 50px; padding-top: 4px; }
+.print-header {
+    text-align: center;
+    border-bottom: 3px double #1E293B;
+    padding-bottom: 10px;
+    margin-bottom: 18px;
+}
+.print-header .rs-name {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 1.15rem;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: #0F172A;
+}
+.print-header .rs-sub {
+    font-size: 0.75rem;
+    color: #64748B;
+    margin-top: 2px;
+}
+.form-title {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 800;
+    text-align: center;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin: 14px 0 6px;
+    color: #0F172A;
+}
+.tabel-indikator th, .tabel-indikator td {
+    padding: 5px 10px;
+    vertical-align: middle;
+    font-size: 0.78rem;
+    border: 1px solid #CBD5E1;
+}
+.tabel-indikator th {
+    background: #F8FAFC;
+    font-weight: 700;
+    color: #475569;
+}
+.tabel-indikator td.skor-val {
+    text-align: center;
+    font-weight: 700;
+    font-family: 'JetBrains Mono', monospace;
+}
+.section-header td {
+    background: #E0F2FE;
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: #0369A1;
+}
+.grade-box {
+    border: 2px solid #1E293B;
+    padding: 10px 24px;
+    display: inline-block;
+    min-width: 80px;
+    text-align: center;
+    border-radius: var(--radius);
+}
+.ttd-table td {
+    vertical-align: top;
+    font-size: 0.75rem;
+    text-align: center;
+    padding: 8px 12px;
+}
+.ttd-line {
+    border-top: 1px solid #1E293B;
+    margin-top: 50px;
+    padding-top: 4px;
+}
 </style>
 {% endblock %}
 
@@ -57,7 +114,7 @@
     </div>
 
     <div class="form-title">Formulir Evaluasi Tenaga Kesehatan Lain<br>
-        <span style="font-size:0.78rem;letter-spacing:0;">(Ongoing Professional Practice Evaluation / OPPE)</span>
+        <span style="font-size:0.78rem;letter-spacing:0;font-weight:600;">(Ongoing Professional Practice Evaluation / OPPE)</span>
     </div>
 
     <table style="width:100%;font-size:0.78rem;margin:12px 0 16px;border-collapse:collapse;">
@@ -119,13 +176,13 @@
             <tr><td class="text-center">19</td><td>Keterlibatan dalam peningkatan mutu dan keselamatan pasien</td><td class="skor-val">{{ oppe.skor_kinerja_8 }}</td></tr>
             <tr><td class="text-center">20</td><td>Kepatuhan terhadap Standar Prosedur Operasional (SPO)</td><td class="skor-val">{{ oppe.skor_kinerja_9 }}</td></tr>
 
-            <tr style="border-top:2px solid #333;">
-                <td colspan="2" style="font-weight:700;font-size:0.78rem;text-align:right;padding:6px 8px;">Total Nilai (Jumlah skor 1-20)</td>
+            <tr style="border-top:2px solid #1E293B;">
+                <td colspan="2" style="font-weight:700;font-size:0.78rem;text-align:right;padding:6px 10px;">Total Nilai (Jumlah skor 1-20)</td>
                 <td class="skor-val" style="font-weight:800;font-size:1rem;">{{ oppe.total_nilai }}</td>
             </tr>
             <tr>
-                <td colspan="2" style="font-weight:700;font-size:0.78rem;text-align:right;padding:6px 8px;">Poin Penilaian (Total ÷ 20)</td>
-                <td class="skor-val" style="font-weight:800;font-size:1rem;color:#0C7C84;">{{ oppe.poin_penilaian }}</td>
+                <td colspan="2" style="font-weight:700;font-size:0.78rem;text-align:right;padding:6px 10px;">Poin Penilaian (Total &divide; 20)</td>
+                <td class="skor-val" style="font-weight:800;font-size:1rem;color:#0369A1;">{{ oppe.poin_penilaian }}</td>
             </tr>
         </tbody>
     </table>
@@ -133,9 +190,9 @@
     <div style="margin:16px 0;font-size:0.75rem;">
         <strong>Keterangan Grade:</strong>
         <span style="margin-left:12px;">
-            <strong>Baik (B)</strong> = ≥ 80 &nbsp;|&nbsp;
-            <strong>Cukup (C)</strong> = 61–79 &nbsp;|&nbsp;
-            <strong>Kurang (K)</strong> = ≤ 60
+            <strong>Baik (B)</strong> = &ge; 80 &nbsp;|&nbsp;
+            <strong>Cukup (C)</strong> = 61&ndash;79 &nbsp;|&nbsp;
+            <strong>Kurang (K)</strong> = &le; 60
         </span>
     </div>
 
@@ -143,7 +200,7 @@
         <span style="font-size:0.78rem;font-weight:600;">Grade :</span>
         <div class="grade-box">
             <div style="font-size:1.4rem;font-weight:800;
-                {% if oppe.grade == 'B' %}color:#2e7d32;{% elif oppe.grade == 'C' %}color:#f57f17;{% else %}color:#c62828;{% endif %}">
+                {% if oppe.grade == 'B' %}color:#059669;{% elif oppe.grade == 'C' %}color:#D97706;{% else %}color:#DC2626;{% endif %}">
                 {{ oppe.grade }}
             </div>
             <div style="font-size:0.72rem;">{{ oppe.grade_display }}</div>
@@ -152,26 +209,26 @@
 
     <table class="ttd-table" style="width:100%;margin-top:24px;border-collapse:collapse;">
         <tr>
-            <td style="width:33%;border:1px solid #ccc;">
+            <td style="width:33%;border:1px solid #CBD5E1;">
                 <div>Penilai / Atasan Langsung,</div>
                 <div class="ttd-line">
                     <div style="font-weight:600;">{{ oppe.penilai_nama|default:"__________________" }}</div>
-                    <div style="color:#555;">NIP: {{ oppe.penilai_nip|default:"___________________" }}</div>
+                    <div style="color:#64748B;">NIP: {{ oppe.penilai_nip|default:"___________________" }}</div>
                 </div>
             </td>
-            <td style="width:33%;border:1px solid #ccc;">
+            <td style="width:33%;border:1px solid #CBD5E1;">
                 <div>Mengetahui,</div>
-                <div style="font-size:0.7rem;color:#555;">Manajer / Ka. Instalasi Terkait</div>
+                <div style="font-size:0.7rem;color:#64748B;">Manajer / Ka. Instalasi Terkait</div>
                 <div class="ttd-line">
                     <div style="font-weight:600;">{{ oppe.mengetahui_nama|default:"__________________" }}</div>
-                    <div style="color:#555;">NIP: {{ oppe.mengetahui_nip|default:"___________________" }}</div>
+                    <div style="color:#64748B;">NIP: {{ oppe.mengetahui_nip|default:"___________________" }}</div>
                 </div>
             </td>
-            <td style="width:33%;border:1px solid #ccc;">
+            <td style="width:33%;border:1px solid #CBD5E1;">
                 <div>Pegawai yang Dinilai,</div>
                 <div class="ttd-line">
                     <div style="font-weight:600;">{{ oppe.nakes.nama }}</div>
-                    <div style="color:#555;">NIP: {{ oppe.pegawai_nip|default:"___________________" }}</div>
+                    <div style="color:#64748B;">NIP: {{ oppe.pegawai_nip|default:"___________________" }}</div>
                 </div>
             </td>
         </tr>

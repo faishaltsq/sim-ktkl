@@ -1,10 +1,29 @@
 {% extends "base.html" %}
+{% block title %}Pelanggaran Etik Profesi - VIRA NAKES{% endblock %}
 
-{% block title %}Pencatatan Pelanggaran Etik - VIRA NAKES{% endblock %}
-{% block page_title %}Pencatatan Pelanggaran Etik{% endblock %}
-{% block page_title_mobile %}Pelanggaran Etik{% endblock %}
+{% block extra_css %}
+<style>
+.table tr.kategori-berat > td:first-child { border-left: 4px solid #DC2626 !important; }
+.table tr.kategori-sedang > td:first-child { border-left: 4px solid #D97706 !important; }
+.table tr.kategori-ringan > td:first-child { border-left: 4px solid #0284C7 !important; }
+
+.card-kategori-berat { border-left: 4px solid #DC2626 !important; }
+.card-kategori-sedang { border-left: 4px solid #D97706 !important; }
+.card-kategori-ringan { border-left: 4px solid #0284C7 !important; }
+</style>
+{% endblock %}
 
 {% block content %}
+<div class="page-header-box domain-etik">
+    <div>
+        <h1 class="page-title-text">Catatan Pelanggaran Etik Profesi</h1>
+        <p class="page-subtitle-text">Registrasi Kasus &amp; Investigasi Komite Etik KTKL</p>
+    </div>
+    <a href="{% url 'nakes:pelanggaran_create' %}" class="btn btn-primary btn-sm">
+        <i class="bi bi-shield-exclamation me-1"></i> Catat Pelanggaran
+    </a>
+</div>
+
 <div class="card mb-3">
     <div class="card-body py-2 px-3">
         <form method="get" class="row g-2 align-items-center">
@@ -28,18 +47,19 @@
                     <option value="Selesai" {% if status == "Selesai" %}selected{% endif %}>Selesai</option>
                 </select>
             </div>
-            <div class="col-6 col-md-1">
-                <button type="submit" class="btn btn-outline-primary btn-sm w-100">Filter</button>
-            </div>
-            <div class="col-6 col-md-1">
-                <a href="{% url 'nakes:pelanggaran_create' %}" class="btn btn-primary btn-sm w-100 text-nowrap">
-                    <i class="bi bi-plus-lg"></i> Catat
+            <div class="col-12 col-md-2 d-flex gap-1">
+                <button type="submit" class="btn btn-outline-primary btn-sm flex-grow-1">
+                    <i class="bi bi-funnel me-1"></i>Filter
+                </button>
+                <a href="{% url 'nakes:pelanggaran_create' %}" class="btn btn-primary btn-sm text-nowrap">
+                    <i class="bi bi-plus-lg"></i>
                 </a>
             </div>
         </form>
     </div>
 </div>
 
+<!-- DESKTOP TABLE -->
 <div class="d-none d-md-block">
     <div class="card">
         <div class="table-responsive">
@@ -47,29 +67,47 @@
                 <thead>
                     <tr>
                         <th>Tgl Kejadian</th>
-                        <th>Nakes</th>
+                        <th>Nama Nakes</th>
                         <th>Profesi</th>
-                        <th>Unit Kerja</th>
+                        <th>Unit</th>
                         <th>Kategori</th>
                         <th>Status</th>
-                        <th>Kronologi / Catatan</th>
+                        <th>Kronologi</th>
                         <th class="text-end">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
                     {% for p in pelanggaran_list %}
-                    <tr>
+                    <tr class="{% if p.kategori == 'Berat' %}kategori-berat{% elif p.kategori == 'Sedang' %}kategori-sedang{% else %}kategori-ringan{% endif %}">
                         <td style="color:var(--text-muted);font-size:0.8rem;white-space:nowrap;">{{ p.tanggal_kejadian|date:"d/m/Y" }}</td>
-                        <td style="font-weight:600;">{{ p.nakes.nama }}</td>
+                        <td>
+                            <a href="{% url 'nakes:pelanggaran_update' p.pk %}" style="font-weight:700;color:var(--text-primary);text-decoration:none;">
+                                {{ p.nakes.nama }}
+                            </a>
+                        </td>
                         <td>{{ p.nakes.profesi.nama }}</td>
-                        <td>{{ p.nakes.unit_kerja }}</td>
-                        <td><span class="badge badge-status-{{ p.kategori_color }}">{{ p.kategori }}</span></td>
-                        <td><span class="badge badge-status-{{ p.status_color }}">{{ p.status }}</span></td>
-                        <td style="max-width:280px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);" title="{{ p.deskripsi }}">
+                        <td style="color:var(--text-secondary);font-size:0.8rem;">{{ p.nakes.unit_kerja }}</td>
+                        <td>
+                            <span class="badge {% if p.kategori == 'Berat' %}badge-status-danger{% elif p.kategori == 'Sedang' %}badge-status-warning{% else %}badge-status-info{% endif %}">
+                                {{ p.kategori }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if p.status == 'Selesai' %}
+                            <span class="badge badge-status-success"><i class="bi bi-check-circle me-1"></i>Selesai</span>
+                            {% elif p.status == 'Diteruskan ke Sidang' %}
+                            <span class="badge badge-status-warning"><i class="bi bi-hammer me-1"></i>Sidang</span>
+                            {% elif p.status == 'Dalam Investigasi' %}
+                            <span class="badge badge-status-info"><i class="bi bi-search me-1"></i>Investigasi</span>
+                            {% else %}
+                            <span class="badge badge-status-neutral"><i class="bi bi-hourglass-split me-1"></i>Menunggu</span>
+                            {% endif %}
+                        </td>
+                        <td style="max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary);font-size:0.8rem;" title="{{ p.deskripsi }}">
                             {{ p.deskripsi }}
                         </td>
                         <td class="text-end" style="white-space:nowrap;">
-                            <a href="{% url 'nakes:pelanggaran_update' p.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;" title="Edit">
+                            <a href="{% url 'nakes:pelanggaran_update' p.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;" title="Edit">
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <form method="post" action="{% url 'nakes:pelanggaran_delete' p.pk %}" class="d-inline" onsubmit="return confirm('Hapus pencatatan pelanggaran ini?')">
@@ -82,7 +120,15 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="8" class="text-center py-4" style="color:var(--text-muted);">Belum ada pencatatan pelanggaran etik.</td>
+                        <td colspan="8" class="text-center py-5">
+                            <div style="color:var(--text-muted);">
+                                <i class="bi bi-shield-check d-block mb-2" style="font-size:2rem;color:#059669;"></i>
+                                Tidak ada catatan pelanggaran etik.<br>
+                                <a href="{% url 'nakes:pelanggaran_create' %}" class="btn btn-primary btn-sm mt-2">
+                                    <i class="bi bi-plus-lg me-1"></i>Catat Pelanggaran
+                                </a>
+                            </div>
+                        </td>
                     </tr>
                     {% endfor %}
                 </tbody>
@@ -91,30 +137,44 @@
     </div>
 </div>
 
+<!-- MOBILE CARDS -->
 <div class="d-md-none">
     {% for p in pelanggaran_list %}
-    <div class="card mb-2">
+    <div class="card mb-2 {% if p.kategori == 'Berat' %}card-kategori-berat{% elif p.kategori == 'Sedang' %}card-kategori-sedang{% else %}card-kategori-ringan{% endif %}">
         <div class="card-body p-3">
             <div class="d-flex justify-content-between align-items-start mb-1">
                 <div>
-                    <div style="font-weight:600;font-size:0.9rem;">{{ p.nakes.nama }}</div>
+                    <a href="{% url 'nakes:pelanggaran_update' p.pk %}" style="font-weight:700;font-size:0.9rem;text-decoration:none;color:var(--text-primary);">
+                        {{ p.nakes.nama }}
+                    </a>
                     <div style="font-size:0.75rem;color:var(--text-muted);">{{ p.nakes.profesi.nama }} &middot; {{ p.nakes.unit_kerja }}</div>
                 </div>
-                <span class="badge badge-status-{{ p.kategori_color }}">{{ p.kategori }}</span>
+                <span class="badge {% if p.kategori == 'Berat' %}badge-status-danger{% elif p.kategori == 'Sedang' %}badge-status-warning{% else %}badge-status-info{% endif %}">{{ p.kategori }}</span>
             </div>
             <div style="font-size:0.78rem;color:var(--text-secondary);margin:0.5rem 0;" class="border-top pt-2">
                 {{ p.deskripsi|truncatewords:20 }}
             </div>
-            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top">
-                <span class="badge badge-status-{{ p.status_color }}">{{ p.status }}</span>
-                <a href="{% url 'nakes:pelanggaran_update' p.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:0.72rem;">
+            <div class="d-flex justify-content-between align-items-center mt-2 pt-2 border-top" style="border-color:var(--border) !important;">
+                {% if p.status == 'Selesai' %}
+                <span class="badge badge-status-success">Selesai</span>
+                {% elif p.status == 'Diteruskan ke Sidang' %}
+                <span class="badge badge-status-warning">Sidang</span>
+                {% elif p.status == 'Dalam Investigasi' %}
+                <span class="badge badge-status-info">Investigasi</span>
+                {% else %}
+                <span class="badge badge-status-neutral">Menunggu</span>
+                {% endif %}
+                <a href="{% url 'nakes:pelanggaran_update' p.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.72rem;">
                     <i class="bi bi-pencil me-1"></i> Edit
                 </a>
             </div>
         </div>
     </div>
     {% empty %}
-    <div class="text-center py-4" style="color:var(--text-muted);">Belum ada pencatatan pelanggaran etik.</div>
+    <div class="text-center py-5" style="color:var(--text-muted);">
+        <i class="bi bi-shield-check d-block mb-2" style="font-size:2rem;color:#059669;"></i>
+        Tidak ada catatan pelanggaran etik.
+    </div>
     {% endfor %}
 </div>
 {% endblock %}
