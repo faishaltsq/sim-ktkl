@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}{{ notulen.judul }} - Cetak Notulen - VIRA NAKES{% endblock %}
+{% block page_title %}Lembar Notulensi Rapat{% endblock %}
+{% block page_title_mobile %}Cetak Notulen{% endblock %}
+
+{% block extra_css %}
+<style>
+@media print {
+    .sidebar-desktop, .offcanvas, nav.navbar, .top-bar, .btn-action-area, .alert { display: none !important; }
+    .main-content { margin: 0 !important; padding: 0 !important; }
+    .content-area { padding: 0 !important; }
+    .print-sheet { box-shadow: none !important; margin: 0 !important; border: none !important; }
+    body { background: white !important; }
+}
+.print-sheet { background: white; max-width: 850px; margin: 0 auto; padding: 24px; border: 1px solid #e0e0e0; border-radius: 8px; }
+.print-header { text-align: center; border-bottom: 3px double #000; padding-bottom: 8px; margin-bottom: 16px; }
+.print-header .rs-name { font-size: 1.1rem; font-weight: 700; letter-spacing: 0.04em; }
+.print-header .rs-sub { font-size: 0.75rem; color: #555; }
+.form-title { font-size: 1rem; font-weight: 700; text-align: center; text-transform: uppercase; letter-spacing: 0.06em; margin: 12px 0 4px; }
+.info-table td { font-size: 0.82rem; padding: 3px 6px; vertical-align: top; }
+.info-table td:first-child { width: 180px; color: #555; font-weight: 500; }
+.section-title { font-weight: 700; font-size: 0.82rem; background: #f0f0f0; padding: 4px 8px; margin-top: 12px; margin-bottom: 6px; border-left: 3px solid #0C7C84; }
+.section-content { font-size: 0.82rem; padding: 8px 12px; min-height: 60px; border: 1px solid #e0e0e0; border-radius: 4px; white-space: pre-wrap; }
+.ttd-table td { vertical-align: top; font-size: 0.78rem; text-align: center; padding: 8px 16px; }
+.ttd-line { border-top: 1px solid #333; margin-top: 55px; padding-top: 4px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="btn-action-area d-flex justify-content-between align-items-center mb-3" style="max-width:850px;margin:0 auto;">
+    <a href="{% url 'nakes:notulen_list' %}" class="btn btn-sm btn-outline-secondary">
+        <i class="bi bi-arrow-left me-1"></i> Kembali
+    </a>
+    <div class="d-flex gap-2">
+        {% if notulen.file_lampiran %}
+        <a href="{% url 'nakes:notulen_download' notulen.pk %}" class="btn btn-sm btn-outline-primary" target="_blank">
+            <i class="bi bi-paperclip me-1"></i> Lampiran
+        </a>
+        {% endif %}
+        <a href="{% url 'nakes:notulen_update' notulen.pk %}" class="btn btn-sm btn-outline-secondary">
+            <i class="bi bi-pencil me-1"></i> Edit
+        </a>
+        <button onclick="window.print()" class="btn btn-sm btn-primary">
+            <i class="bi bi-printer me-1"></i> Cetak / PDF
+        </button>
+    </div>
+</div>
+
+<div class="print-sheet">
+    <div class="print-header">
+        <div class="rs-name">RS PKU MUHAMMADIYAH GOMBONG</div>
+        <div class="rs-sub">Jl. Yos Sudarso No.461, Gombong, Kebumen | LARSI Paripurna</div>
+    </div>
+
+    <div class="form-title">Notulensi Rapat<br>
+        <span style="font-size:0.78rem;font-weight:400;letter-spacing:0;">Komite Tenaga Kesehatan Lainnya (KTKL)</span>
+    </div>
+
+    {% if notulen.agenda_rapat %}
+    <div style="text-align:center;font-size:0.75rem;color:#888;margin-bottom:8px;">
+        Terkait Agenda: {{ notulen.agenda_rapat.judul_rapat }}
+    </div>
+    {% endif %}
+
+    <table class="info-table" style="width:100%;margin:12px 0 8px;border-collapse:collapse;">
+        <tr>
+            <td>Judul Rapat</td>
+            <td>: <strong>{{ notulen.judul }}</strong></td>
+            <td style="width:140px;color:#555;font-size:0.82rem;">Tanggal</td>
+            <td>: {{ notulen.tanggal|date:"d F Y" }}</td>
+        </tr>
+        <tr>
+            <td>Pimpinan Rapat</td>
+            <td>: {{ notulen.pimpinan_rapat }}</td>
+            <td>Waktu</td>
+            <td>: {{ notulen.waktu_mulai|default:"-" }} {% if notulen.waktu_selesai %}– {{ notulen.waktu_selesai }}{% endif %}</td>
+        </tr>
+        <tr>
+            <td>Notulis</td>
+            <td>: {{ notulen.notulis }}</td>
+            <td>Tempat</td>
+            <td>: {{ notulen.tempat|default:"-" }}</td>
+        </tr>
+    </table>
+
+    {% if notulen.peserta_hadir %}
+    <div class="section-title">Peserta Hadir</div>
+    <div class="section-content">{{ notulen.peserta_hadir }}</div>
+    {% endif %}
+
+    <div class="section-title">Agenda / Topik Bahasan</div>
+    <div class="section-content">{{ notulen.agenda_bahasan }}</div>
+
+    <div class="section-title">Isi Pembahasan</div>
+    <div class="section-content" style="min-height:100px;">{{ notulen.isi_pembahasan }}</div>
+
+    <div class="section-title">Kesimpulan &amp; Keputusan Rapat</div>
+    <div class="section-content">{{ notulen.kesimpulan_keputusan }}</div>
+
+    {% if notulen.rencana_tindak_lanjut %}
+    <div class="section-title">Rencana Tindak Lanjut &amp; PIC</div>
+    <div class="section-content">{{ notulen.rencana_tindak_lanjut }}</div>
+    {% endif %}
+
+    <table class="ttd-table" style="width:100%;margin-top:28px;border-collapse:collapse;">
+        <tr>
+            <td style="border:1px solid #ccc;width:50%;">
+                <div>Notulis,</div>
+                <div class="ttd-line">
+                    <div style="font-weight:600;">{{ notulen.notulis }}</div>
+                </div>
+            </td>
+            <td style="border:1px solid #ccc;width:50%;">
+                <div>Pimpinan Rapat,</div>
+                <div class="ttd-line">
+                    <div style="font-weight:600;">{{ notulen.pimpinan_rapat }}</div>
+                </div>
+            </td>
+        </tr>
+    </table>
+</div>
+{% endblock %}

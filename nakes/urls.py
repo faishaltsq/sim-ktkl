@@ -50,4 +50,23 @@ urlpatterns = [
     path('etik/evaluasi/tambah/', views.evaluasi_etik_create, name='evaluasi_etik_create'),
     path('etik/evaluasi/<int:pk>/edit/', views.evaluasi_etik_update, name='evaluasi_etik_update'),
     path('etik/evaluasi/<int:pk>/hapus/', views.evaluasi_etik_delete, name='evaluasi_etik_delete'),
+
+    path('sekretariat/agenda/', views.agenda_calendar, name='agenda_calendar'),
+    path('sekretariat/agenda/api/events/', views.agenda_events_api, name='agenda_events_api'),
+    path('sekretariat/agenda/tambah/', views.agenda_create, name='agenda_create'),
+    path('sekretariat/agenda/<int:pk>/edit/', views.agenda_update, name='agenda_update'),
+    path('sekretariat/agenda/<int:pk>/hapus/', views.agenda_delete, name='agenda_delete'),
+
+    path('sekretariat/regulasi/', views.regulasi_list, name='regulasi_list'),
+    path('sekretariat/regulasi/upload/', views.regulasi_create, name='regulasi_create'),
+    path('sekretariat/regulasi/<int:pk>/edit/', views.regulasi_update, name='regulasi_update'),
+    path('sekretariat/regulasi/<int:pk>/download/', views.regulasi_download, name='regulasi_download'),
+    path('sekretariat/regulasi/<int:pk>/hapus/', views.regulasi_delete, name='regulasi_delete'),
+
+    path('sekretariat/notulen/', views.notulen_list, name='notulen_list'),
+    path('sekretariat/notulen/tambah/', views.notulen_create, name='notulen_create'),
+    path('sekretariat/notulen/<int:pk>/', views.notulen_detail, name='notulen_detail'),
+    path('sekretariat/notulen/<int:pk>/edit/', views.notulen_update, name='notulen_update'),
+    path('sekretariat/notulen/<int:pk>/download/', views.notulen_download, name='notulen_download'),
+    path('sekretariat/notulen/<int:pk>/hapus/', views.notulen_delete, name='notulen_delete'),
 ]

@@ -3,6 +3,7 @@ from .models import (
     Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi,
     EvaluasiOPPE, EvaluasiMutuKlinis,
     PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik,
+    AgendaRapat, Regulasi, NotulenRapat,
 )
 
 
@@ -77,3 +78,24 @@ class EvaluasiKinerjaEtikAdmin(admin.ModelAdmin):
     list_display = ['nakes', 'periode_tahun', 'periode_semester', 'predikat', 'status_kepatuhan', 'evaluator']
     list_filter = ['periode_tahun', 'periode_semester', 'predikat', 'status_kepatuhan']
     search_fields = ['nakes__nama', 'catatan_evaluasi', 'evaluator']
+
+
+@admin.register(AgendaRapat)
+class AgendaRapatAdmin(admin.ModelAdmin):
+    list_display = ['judul_rapat', 'jenis_rapat', 'tanggal_rapat', 'waktu_mulai', 'tempat', 'status']
+    list_filter = ['jenis_rapat', 'status', 'tanggal_rapat']
+    search_fields = ['judul_rapat', 'tempat']
+
+
+@admin.register(Regulasi)
+class RegulasiAdmin(admin.ModelAdmin):
+    list_display = ['judul', 'nomor_dokumen', 'kategori', 'tanggal_terbit', 'status']
+    list_filter = ['kategori', 'status']
+    search_fields = ['judul', 'nomor_dokumen', 'ringkasan']
+
+
+@admin.register(NotulenRapat)
+class NotulenRapatAdmin(admin.ModelAdmin):
+    list_display = ['judul', 'tanggal', 'pimpinan_rapat', 'notulis']
+    list_filter = ['tanggal']
+    search_fields = ['judul', 'pimpinan_rapat', 'notulis', 'agenda_bahasan']

@@ -17,11 +17,13 @@ from .models import (
     Nakes, DokumenNakes, AuditLog, DokumenUmum, Profesi,
     EvaluasiOPPE, EvaluasiMutuKlinis,
     PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik,
+    AgendaRapat, Regulasi, NotulenRapat,
 )
 from .forms import (
     NakesForm, DokumenForm, NakesSearchForm, DokumenUmumForm,
     EvaluasiOPPEForm, EvaluasiMutuKlinisForm,
     PelanggaranEtikForm, SidangEtikForm, EvaluasiKinerjaEtikForm,
+    AgendaRapatForm, RegulasiForm, NotulenRapatForm,
 )
 
 
@@ -1194,3 +1196,284 @@ def evaluasi_etik_delete(request, pk):
         obj.delete()
         messages.success(request, 'Data evaluasi kinerja etik berhasil dihapus.')
     return redirect('nakes:evaluasi_etik_list')
+
+
+# ==========================================
+# SEKRETARIAT: AGENDA RAPAT (CALENDAR)
+# ==========================================
+
+@login_required
+def agenda_calendar(request):
+    return render(request, 'nakes/sekretariat/agenda_calendar.html')
+
+
+@login_required
+def agenda_events_api(request):
+    qs = AgendaRapat.objects.all()
+    color_map = {
+        'Terjadwal': '#0C7C84',
+        'Selesai': '#059669',
+        'Ditunda': '#D97706',
+        'Dibatalkan': '#DC2626',
+    }
+    events = []
+    for a in qs:
+        events.append({
+            'id': a.pk,
+            'title': a.judul_rapat,
+            'start': f'{a.tanggal_rapat}T{a.waktu_mulai.strftime("%H:%M")}',
+            'end': f'{a.tanggal_rapat}T{a.waktu_selesai.strftime("%H:%M")}' if a.waktu_selesai else None,
+            'color': color_map.get(a.status, '#64748B'),
+            'extendedProps': {
+                'pk': a.pk,
+                'judul': a.judul_rapat,
+                'jenis': a.jenis_rapat,
+                'tempat': a.tempat,
+                'peserta': a.peserta,
+                'status': a.status,
+                'keterangan': a.keterangan,
+                'edit_url': reverse('nakes:agenda_update', args=[a.pk]),
+                'delete_url': reverse('nakes:agenda_delete', args=[a.pk]),
+                'buat_notulen_url': f"{reverse('nakes:notulen_create')}?agenda_id={a.pk}",
+            },
+        })
+    return JsonResponse(events, safe=False)
+
+
+@login_required
+def agenda_create(request):
+    if request.method == 'POST':
+        form = AgendaRapatForm(request.POST)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.created_by = request.user
+            obj.save()
+            log_audit(request.user, 'CREATE', obj, detail=f'Agenda rapat: {obj.judul_rapat}')
+            messages.success(request, f'Agenda rapat "{obj.judul_rapat}" berhasil dibuat.')
+            return redirect('nakes:agenda_calendar')
+    else:
+        initial = {'tanggal_rapat': date.today(), 'waktu_mulai': '09:00'}
+        form = AgendaRapatForm(initial=initial)
+    return render(request, 'nakes/sekretariat/agenda_form.html', {'form': form, 'title': 'Jadwalkan Rapat Komite'})
+
+
+@login_required
+def agenda_update(request, pk):
+    obj = get_object_or_404(AgendaRapat, pk=pk)
+    if request.method == 'POST':
+        form = AgendaRapatForm(request.POST, instance=obj)
+        if form.is_valid():
+            form.save()
+            log_audit(request.user, 'UPDATE', obj, detail=f'Update rapat: {obj.judul_rapat}')
+            messages.success(request, 'Jadwal rapat berhasil diperbarui.')
+            return redirect('nakes:agenda_calendar')
+    else:
+        form = AgendaRapatForm(instance=obj)
+    return render(request, 'nakes/sekretariat/agenda_form.html', {'form': form, 'title': f'Edit - {obj.judul_rapat}'})
+
+
+@login_required
+def agenda_delete(request, pk):
+    obj = get_object_or_404(AgendaRapat, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', obj, detail=f'Hapus rapat: {obj.judul_rapat}')
+        obj.delete()
+        messages.success(request, 'Agenda rapat berhasil dihapus.')
+    return redirect('nakes:agenda_calendar')
+
+
+# ==========================================
+# SEKRETARIAT: REGULASI & KEBIJAKAN
+# ==========================================
+
+@login_required
+def regulasi_list(request):
+    qs = Regulasi.objects.all()
+    q = request.GET.get('q', '').strip()
+    kategori = request.GET.get('kategori', '').strip()
+    status = request.GET.get('status', '').strip()
+
+    if q:
+        qs = qs.filter(Q(judul__icontains=q) | Q(nomor_dokumen__icontains=q) | Q(ringkasan__icontains=q))
+    if kategori:
+        qs = qs.filter(kategori=kategori)
+    if status:
+        qs = qs.filter(status=status)
+
+    context = {
+        'regulasi_list': qs,
+        'q': q,
+        'kategori': kategori,
+        'status': status,
+        'kategori_choices': Regulasi.KATEGORI_CHOICES,
+        'status_choices': Regulasi.STATUS_CHOICES,
+    }
+    return render(request, 'nakes/sekretariat/regulasi_list.html', context)
+
+
+@login_required
+def regulasi_create(request):
+    if request.method == 'POST':
+        form = RegulasiForm(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.created_by = request.user
+            obj.save()
+            log_audit(request.user, 'CREATE', obj, detail=f'Upload regulasi: {obj.judul}')
+            messages.success(request, f'Dokumen regulasi "{obj.judul}" berhasil diupload.')
+            return redirect('nakes:regulasi_list')
+    else:
+        form = RegulasiForm(initial={'tanggal_terbit': date.today(), 'tanggal_berlaku': date.today()})
+    return render(request, 'nakes/sekretariat/regulasi_form.html', {'form': form, 'title': 'Upload Regulasi / Kebijakan'})
+
+
+@login_required
+def regulasi_update(request, pk):
+    obj = get_object_or_404(Regulasi, pk=pk)
+    if request.method == 'POST':
+        form = RegulasiForm(request.POST, request.FILES, instance=obj)
+        if form.is_valid():
+            form.save()
+            log_audit(request.user, 'UPDATE', obj, detail=f'Update regulasi: {obj.judul}')
+            messages.success(request, 'Data regulasi berhasil diperbarui.')
+            return redirect('nakes:regulasi_list')
+    else:
+        form = RegulasiForm(instance=obj)
+    return render(request, 'nakes/sekretariat/regulasi_form.html', {'form': form, 'title': f'Edit - {obj.judul}'})
+
+
+@login_required
+def regulasi_download(request, pk):
+    obj = get_object_or_404(Regulasi, pk=pk)
+    if not obj.file:
+        messages.error(request, 'File regulasi tidak ditemukan.')
+        return redirect('nakes:regulasi_list')
+    try:
+        return FileResponse(obj.file.open('rb'))
+    except (FileNotFoundError, ValueError):
+        messages.error(request, 'File fisik regulasi tidak ditemukan pada server.')
+        return redirect('nakes:regulasi_list')
+
+
+@login_required
+def regulasi_delete(request, pk):
+    obj = get_object_or_404(Regulasi, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', obj, detail=f'Hapus regulasi: {obj.judul}')
+        try:
+            if obj.file:
+                obj.file.close()
+                obj.file.delete(save=False)
+        except Exception:
+            pass
+        obj.delete()
+        messages.success(request, 'Dokumen regulasi berhasil dihapus.')
+    return redirect('nakes:regulasi_list')
+
+
+# ==========================================
+# SEKRETARIAT: NOTULENSI RAPAT
+# ==========================================
+
+@login_required
+def notulen_list(request):
+    qs = NotulenRapat.objects.select_related('agenda_rapat').all()
+    q = request.GET.get('q', '').strip()
+    tahun = request.GET.get('tahun', '').strip()
+
+    if q:
+        qs = qs.filter(Q(judul__icontains=q) | Q(pimpinan_rapat__icontains=q) | Q(agenda_bahasan__icontains=q))
+    if tahun:
+        qs = qs.filter(tanggal__year=tahun)
+
+    years = NotulenRapat.objects.dates('tanggal', 'year', order='DESC')
+    year_list = [d.year for d in years]
+
+    context = {
+        'notulen_list': qs,
+        'q': q,
+        'tahun': tahun,
+        'year_list': year_list,
+    }
+    return render(request, 'nakes/sekretariat/notulen_list.html', context)
+
+
+@login_required
+def notulen_create(request):
+    agenda_id = request.GET.get('agenda_id')
+    if request.method == 'POST':
+        form = NotulenRapatForm(request.POST, request.FILES)
+        if form.is_valid():
+            obj = form.save(commit=False)
+            obj.created_by = request.user
+            obj.save()
+            log_audit(request.user, 'CREATE', obj, detail=f'Notulen: {obj.judul}')
+            messages.success(request, f'Notulen rapat "{obj.judul}" berhasil disimpan.')
+            return redirect('nakes:notulen_detail', pk=obj.pk)
+    else:
+        initial = {'tanggal': date.today()}
+        if agenda_id:
+            agenda = AgendaRapat.objects.filter(pk=agenda_id).first()
+            if agenda:
+                initial.update({
+                    'agenda_rapat': agenda,
+                    'judul': f'Notulen {agenda.judul_rapat}',
+                    'tanggal': agenda.tanggal_rapat,
+                    'waktu_mulai': agenda.waktu_mulai,
+                    'waktu_selesai': agenda.waktu_selesai,
+                    'tempat': agenda.tempat,
+                    'agenda_bahasan': agenda.judul_rapat,
+                    'peserta_hadir': agenda.peserta,
+                })
+        form = NotulenRapatForm(initial=initial)
+    return render(request, 'nakes/sekretariat/notulen_form.html', {'form': form, 'title': 'Tulis Notulen Rapat'})
+
+
+@login_required
+def notulen_detail(request, pk):
+    obj = get_object_or_404(NotulenRapat.objects.select_related('agenda_rapat'), pk=pk)
+    return render(request, 'nakes/sekretariat/notulen_print.html', {'notulen': obj})
+
+
+@login_required
+def notulen_update(request, pk):
+    obj = get_object_or_404(NotulenRapat, pk=pk)
+    if request.method == 'POST':
+        form = NotulenRapatForm(request.POST, request.FILES, instance=obj)
+        if form.is_valid():
+            form.save()
+            log_audit(request.user, 'UPDATE', obj, detail=f'Update notulen: {obj.judul}')
+            messages.success(request, 'Notulen rapat berhasil diperbarui.')
+            return redirect('nakes:notulen_detail', pk=obj.pk)
+    else:
+        form = NotulenRapatForm(instance=obj)
+    return render(request, 'nakes/sekretariat/notulen_form.html', {'form': form, 'title': f'Edit - {obj.judul}'})
+
+
+@login_required
+def notulen_download(request, pk):
+    obj = get_object_or_404(NotulenRapat, pk=pk)
+    if not obj.file_lampiran:
+        messages.error(request, 'Lampiran notulen tidak ditemukan.')
+        return redirect('nakes:notulen_detail', pk=obj.pk)
+    try:
+        return FileResponse(obj.file_lampiran.open('rb'))
+    except (FileNotFoundError, ValueError):
+        messages.error(request, 'File fisik lampiran tidak ditemukan pada server.')
+        return redirect('nakes:notulen_detail', pk=obj.pk)
+
+
+@login_required
+def notulen_delete(request, pk):
+    obj = get_object_or_404(NotulenRapat, pk=pk)
+    if request.method == 'POST':
+        log_audit(request.user, 'DELETE', obj, detail=f'Hapus notulen: {obj.judul}')
+        try:
+            if obj.file_lampiran:
+                obj.file_lampiran.close()
+                obj.file_lampiran.delete(save=False)
+        except Exception:
+            pass
+        obj.delete()
+        messages.success(request, 'Notulen rapat berhasil dihapus.')
+    return redirect('nakes:notulen_list')

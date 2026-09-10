@@ -4,7 +4,8 @@ from django.utils.safestring import mark_safe
 from .models import (
     Nakes, DokumenNakes, DokumenUmum, Profesi,
     EvaluasiOPPE, EvaluasiMutuKlinis,
-    PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik
+    PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik,
+    AgendaRapat, Regulasi, NotulenRapat,
 )
 
 ALLOWED_DOC_EXTENSIONS = {'.pdf', '.jpg', '.jpeg', '.png', '.doc', '.docx', '.xls', '.xlsx'}
@@ -273,3 +274,93 @@ class EvaluasiKinerjaEtikForm(forms.ModelForm):
             'rekomendasi_kelanjutan': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Kelayakan perpanjangan SPK / RKK...'}),
             'evaluator': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nama evaluator / penilai'}),
         }
+
+
+class AgendaRapatForm(forms.ModelForm):
+    class Meta:
+        model = AgendaRapat
+        fields = [
+            'judul_rapat', 'jenis_rapat', 'tanggal_rapat',
+            'waktu_mulai', 'waktu_selesai', 'tempat',
+            'peserta', 'status', 'keterangan',
+        ]
+        widgets = {
+            'judul_rapat': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contoh: Rapat Pleno Komite KTKL Triwulan II'}),
+            'jenis_rapat': forms.Select(attrs={'class': 'form-select'}),
+            'tanggal_rapat': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'waktu_mulai': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'waktu_selesai': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'tempat': forms.TextInput(attrs={'class': 'form-control'}),
+            'peserta': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Daftar undangan / peserta rapat...'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'keterangan': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Catatan / perlengkapan rapat...'}),
+        }
+
+
+class RegulasiForm(forms.ModelForm):
+    class Meta:
+        model = Regulasi
+        fields = [
+            'judul', 'nomor_dokumen', 'kategori',
+            'tanggal_terbit', 'tanggal_berlaku', 'tanggal_kadaluarsa',
+            'status', 'ringkasan', 'file',
+        ]
+        widgets = {
+            'judul': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Judul lengkap regulasi/kebijakan'}),
+            'nomor_dokumen': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Contoh: 045/SK/DIR/I/2025'}),
+            'kategori': forms.Select(attrs={'class': 'form-select'}),
+            'tanggal_terbit': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'tanggal_berlaku': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'tanggal_kadaluarsa': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'status': forms.Select(attrs={'class': 'form-select'}),
+            'ringkasan': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Abstrak / ringkasan isi regulasi...'}),
+            'file': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf'}),
+        }
+
+    def clean_file(self):
+        file = self.cleaned_data.get('file')
+        if file:
+            ext = os.path.splitext(file.name)[1].lower()
+            if ext != '.pdf':
+                raise forms.ValidationError('Format dokumen regulasi harus berupa file PDF (.pdf).')
+            if file.size > MAX_UPLOAD_SIZE:
+                raise forms.ValidationError('Ukuran file maksimal 15 MB.')
+        return file
+
+
+class NotulenRapatForm(forms.ModelForm):
+    class Meta:
+        model = NotulenRapat
+        fields = [
+            'agenda_rapat', 'judul', 'tanggal',
+            'waktu_mulai', 'waktu_selesai', 'tempat',
+            'pimpinan_rapat', 'notulis', 'peserta_hadir',
+            'agenda_bahasan', 'isi_pembahasan', 'kesimpulan_keputusan',
+            'rencana_tindak_lanjut', 'file_lampiran',
+        ]
+        widgets = {
+            'agenda_rapat': forms.Select(attrs={'class': 'form-select'}),
+            'judul': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Judul notulen rapat'}),
+            'tanggal': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'waktu_mulai': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'waktu_selesai': forms.TimeInput(attrs={'type': 'time', 'class': 'form-control'}),
+            'tempat': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Tempat pelaksanaan rapat'}),
+            'pimpinan_rapat': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nama pimpinan rapat'}),
+            'notulis': forms.TextInput(attrs={'class': 'form-control', 'placeholder': 'Nama notulis / pencatat'}),
+            'peserta_hadir': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Daftar peserta yang hadir...'}),
+            'agenda_bahasan': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Topik / agenda yang dibahas...'}),
+            'isi_pembahasan': forms.Textarea(attrs={'class': 'form-control', 'rows': 4, 'placeholder': 'Dinamika dan uraian pembahasan rapat...'}),
+            'kesimpulan_keputusan': forms.Textarea(attrs={'class': 'form-control', 'rows': 3, 'placeholder': 'Butir-butir kesimpulan / keputusan rapat...'}),
+            'rencana_tindak_lanjut': forms.Textarea(attrs={'class': 'form-control', 'rows': 2, 'placeholder': 'Rencana tindak lanjut dan PIC...'}),
+            'file_lampiran': forms.FileInput(attrs={'class': 'form-control', 'accept': '.pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx'}),
+        }
+
+    def clean_file_lampiran(self):
+        file = self.cleaned_data.get('file_lampiran')
+        if file:
+            ext = os.path.splitext(file.name)[1].lower()
+            if ext not in ALLOWED_DOC_EXTENSIONS:
+                raise forms.ValidationError(f'Format file "{ext}" tidak didukung.')
+            if file.size > MAX_UPLOAD_SIZE:
+                raise forms.ValidationError('Ukuran file maksimal 15 MB.')
+        return file

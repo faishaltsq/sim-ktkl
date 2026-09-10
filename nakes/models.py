@@ -508,3 +508,131 @@ class EvaluasiKinerjaEtik(models.Model):
             'Dalam Pembinaan': 'warning',
             'Sanksi Aktif': 'danger',
         }.get(self.status_kepatuhan, 'secondary')
+
+
+# ==========================================
+# SEKRETARIAT, AGENDA & REGULASI
+# ==========================================
+
+class AgendaRapat(models.Model):
+    JENIS_CHOICES = [
+        ('Rapat Pleno', 'Rapat Pleno'),
+        ('Rutin Bulanan', 'Rutin Bulanan'),
+        ('Koordinasi', 'Koordinasi'),
+        ('Insidentil', 'Insidentil'),
+        ('Lainnya', 'Lainnya'),
+    ]
+
+    STATUS_CHOICES = [
+        ('Terjadwal', 'Terjadwal'),
+        ('Selesai', 'Selesai'),
+        ('Ditunda', 'Ditunda'),
+        ('Dibatalkan', 'Dibatalkan'),
+    ]
+
+    judul_rapat = models.CharField('Judul / Agenda Rapat', max_length=250)
+    jenis_rapat = models.CharField('Jenis Rapat', max_length=30, choices=JENIS_CHOICES, default='Rutin Bulanan')
+    tanggal_rapat = models.DateField('Tanggal Rapat')
+    waktu_mulai = models.TimeField('Waktu Mulai')
+    waktu_selesai = models.TimeField('Waktu Selesai', null=True, blank=True)
+    tempat = models.CharField('Tempat / Ruangan', max_length=200, default='Ruang Rapat Komite KTKL')
+    peserta = models.TextField('Daftar Peserta / Undangan', blank=True)
+    status = models.CharField('Status', max_length=20, choices=STATUS_CHOICES, default='Terjadwal')
+    keterangan = models.TextField('Keterangan Tambahan', blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='agenda_created')
+
+    class Meta:
+        verbose_name = 'Agenda Rapat'
+        verbose_name_plural = 'Agenda Rapat'
+        ordering = ['tanggal_rapat', 'waktu_mulai']
+
+    def __str__(self):
+        return f"{self.judul_rapat} ({self.tanggal_rapat})"
+
+    @property
+    def status_color(self):
+        return {
+            'Terjadwal': 'primary',
+            'Selesai': 'success',
+            'Ditunda': 'warning',
+            'Dibatalkan': 'danger',
+        }.get(self.status, 'secondary')
+
+
+class Regulasi(models.Model):
+    KATEGORI_CHOICES = [
+        ('SK Direktur', 'SK Direktur'),
+        ('Pedoman / Panduan', 'Pedoman / Panduan'),
+        ('SPO', 'SPO'),
+        ('Kebijakan RS', 'Kebijakan Rumah Sakit'),
+        ('Peraturan Perundangan', 'Peraturan Perundangan'),
+        ('Lainnya', 'Lainnya'),
+    ]
+
+    STATUS_CHOICES = [
+        ('Berlaku', 'Berlaku'),
+        ('Dalam Revisi', 'Dalam Revisi'),
+        ('Dicabut', 'Dicabut'),
+    ]
+
+    judul = models.CharField('Judul Dokumen Regulasi', max_length=250)
+    nomor_dokumen = models.CharField('Nomor Dokumen', max_length=100)
+    kategori = models.CharField('Kategori', max_length=30, choices=KATEGORI_CHOICES, default='SK Direktur')
+    tanggal_terbit = models.DateField('Tanggal Terbit')
+    tanggal_berlaku = models.DateField('Tanggal Mulai Berlaku')
+    tanggal_kadaluarsa = models.DateField('Tanggal Kadaluarsa', null=True, blank=True)
+    status = models.CharField('Status Keabsahan', max_length=20, choices=STATUS_CHOICES, default='Berlaku')
+    ringkasan = models.TextField('Ringkasan / Abstrak', blank=True)
+    file = models.FileField('File Dokumen (PDF)', upload_to='regulasi/%Y/%m/')
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='regulasi_created')
+
+    class Meta:
+        verbose_name = 'Regulasi & Kebijakan'
+        verbose_name_plural = 'Regulasi & Kebijakan'
+        ordering = ['-tanggal_terbit']
+
+    def __str__(self):
+        return f"{self.judul} ({self.nomor_dokumen})"
+
+    @property
+    def status_color(self):
+        return {
+            'Berlaku': 'success',
+            'Dalam Revisi': 'warning',
+            'Dicabut': 'danger',
+        }.get(self.status, 'secondary')
+
+
+class NotulenRapat(models.Model):
+    agenda_rapat = models.ForeignKey(AgendaRapat, on_delete=models.SET_NULL, null=True, blank=True, related_name='notulen_set', verbose_name='Agenda Rapat Terkait')
+    judul = models.CharField('Judul Notulen', max_length=250)
+    tanggal = models.DateField('Tanggal Rapat')
+    waktu_mulai = models.TimeField('Waktu Mulai', null=True, blank=True)
+    waktu_selesai = models.TimeField('Waktu Selesai', null=True, blank=True)
+    tempat = models.CharField('Tempat', max_length=200, blank=True)
+    pimpinan_rapat = models.CharField('Pimpinan Rapat', max_length=200)
+    notulis = models.CharField('Notulis / Pencatat', max_length=200)
+    peserta_hadir = models.TextField('Daftar Hadir Peserta', blank=True)
+    agenda_bahasan = models.TextField('Agenda / Topik Bahasan')
+    isi_pembahasan = models.TextField('Isi Pembahasan')
+    kesimpulan_keputusan = models.TextField('Kesimpulan & Keputusan')
+    rencana_tindak_lanjut = models.TextField('Rencana Tindak Lanjut & PIC', blank=True)
+    file_lampiran = models.FileField('File Lampiran', upload_to='notulen/%Y/%m/', null=True, blank=True)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    created_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name='notulen_created')
+
+    class Meta:
+        verbose_name = 'Notulen Rapat'
+        verbose_name_plural = 'Notulen Rapat'
+        ordering = ['-tanggal', '-created_at']
+
+    def __str__(self):
+        return f"{self.judul} ({self.tanggal})"

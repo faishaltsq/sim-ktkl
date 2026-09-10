@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Agenda Rapat Komite - VIRA NAKES{% endblock %}
+{% block page_title %}Agenda Rapat Komite KTKL{% endblock %}
+{% block page_title_mobile %}Agenda Rapat{% endblock %}
+
+{% block extra_css %}
+<style>
+.fc { font-size: 0.82rem; }
+.fc-toolbar-title { font-size: 1rem !important; font-weight: 700 !important; }
+.fc-toolbar { flex-wrap: wrap; gap: 0.5rem; }
+.fc-button {
+    font-size: 0.78rem !important;
+    padding: 0.35rem 0.85rem !important;
+    border-radius: var(--radius) !important;
+    font-weight: 500 !important;
+    transition: all 0.15s ease !important;
+    border: 1px solid var(--border) !important;
+    background: var(--surface) !important;
+    color: var(--text-primary) !important;
+    box-shadow: none !important;
+}
+.fc-button:hover { background: var(--primary-light) !important; color: var(--primary) !important; border-color: var(--primary) !important; }
+.fc-button-active, .fc-button.fc-button-primary:not(:disabled).fc-button-active { background: var(--primary) !important; color: #fff !important; border-color: var(--primary) !important; }
+.fc-prev-button, .fc-next-button { padding: 0.35rem 0.55rem !important; }
+.fc-today-button { background: var(--primary) !important; color: #fff !important; border-color: var(--primary) !important; }
+.fc-today-button:hover { background: var(--primary-deep) !important; border-color: var(--primary-deep) !important; color: #fff !important; }
+.fc-today-button:disabled { opacity: 0.5 !important; }
+.fc-event { border-radius: 5px !important; font-weight: 600 !important; font-size: 0.75rem !important; cursor: pointer !important; padding: 2px 5px !important; border: none !important; }
+.fc-day-today { background: var(--primary-light) !important; }
+.fc-col-header-cell { background: #f8fafb; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; padding: 0.5rem 0 !important; }
+.modal-backdrop { z-index: 1040; }
+#agendaModal { z-index: 1050; }
+.modal-card-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 0.15rem; }
+@media (max-width: 767.98px) {
+    .fc-toolbar-title { font-size: 0.88rem !important; }
+    .fc-button { font-size: 0.72rem !important; padding: 0.28rem 0.55rem !important; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <div></div>
+    <a href="{% url 'nakes:agenda_create' %}" class="btn btn-primary btn-sm" style="border-radius:var(--radius);font-weight:600;">
+        <i class="bi bi-calendar-plus me-1"></i> Jadwalkan Rapat Baru
+    </a>
+</div>
+
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <strong style="font-size:0.85rem;">Kalender Agenda Rapat Komite KTKL</strong>
+        <div class="d-flex gap-3 flex-wrap" style="font-size:0.75rem;">
+            <span style="color:#0C7C84;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#0C7C84;border-radius:2px;display:inline-block;"></span> Terjadwal
+            </span>
+            <span style="color:#059669;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#059669;border-radius:2px;display:inline-block;"></span> Selesai
+            </span>
+            <span style="color:#D97706;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#D97706;border-radius:2px;display:inline-block;"></span> Ditunda
+            </span>
+            <span style="color:#DC2626;font-weight:600;display:flex;align-items:center;gap:4px;">
+                <span style="width:10px;height:10px;background:#DC2626;border-radius:2px;display:inline-block;"></span> Dibatalkan
+            </span>
+        </div>
+    </div>
+    <div class="card-body p-2 p-md-3">
+        <div id="calendar"></div>
+    </div>
+</div>
+
+<div class="modal fade" id="agendaModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="background:var(--primary);color:#fff;padding:1rem 1.25rem;">
+                <div>
+                    <h6 class="modal-title mb-0 fw-bold" id="modalJudul"></h6>
+                    <small id="modalJenis" style="opacity:0.85;font-size:0.75rem;"></small>
+                </div>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="row g-3">
+                    <div class="col-6 col-md-4">
+                        <div class="modal-card-label">Waktu</div>
+                        <div id="modalWaktu"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="modal-card-label">Tempat</div>
+                        <div id="modalTempat"></div>
+                    </div>
+                    <div class="col-6 col-md-4">
+                        <div class="modal-card-label">Status</div>
+                        <div id="modalStatus"></div>
+                    </div>
+                    <div class="col-12" id="pesertaRow" style="display:none;">
+                        <div class="modal-card-label">Peserta / Undangan</div>
+                        <div id="modalPeserta" class="border rounded p-2 mt-1" style="font-size:0.82rem;white-space:pre-wrap;background:#f8fafb;"></div>
+                    </div>
+                    <div class="col-12" id="keteranganRow" style="display:none;">
+                        <div class="modal-card-label">Keterangan</div>
+                        <div id="modalKeterangan" class="border rounded p-2 mt-1" style="font-size:0.82rem;white-space:pre-wrap;background:#f8fafb;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer" style="padding:0.75rem 1.25rem;border-top:1px solid var(--border);background:#fafafa;border-radius:0 0 0.5rem 0.5rem;">
+                <div class="d-flex gap-2 w-100 align-items-center flex-wrap">
+                    <a href="#" id="modalEditBtn" class="btn btn-primary btn-sm" style="font-weight:600;min-width:80px;">
+                        <i class="bi bi-pencil me-1"></i> Edit
+                    </a>
+                    <a href="#" id="modalNotulenBtn" class="btn btn-outline-primary btn-sm" style="min-width:130px;">
+                        <i class="bi bi-journal-text me-1"></i> Buat Notulen
+                    </a>
+                    <form method="post" id="modalDeleteForm" class="d-inline ms-auto" onsubmit="return confirm('Hapus agenda rapat ini?')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-outline-danger btn-sm" style="min-width:80px;">
+                            <i class="bi bi-trash me-1"></i> Hapus
+                        </button>
+                    </form>
+                    <button type="button" class="btn btn-outline-secondary btn-sm" data-bs-dismiss="modal" style="min-width:70px;">Tutup</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/index.global.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const calendarEl = document.getElementById('calendar');
+    const modal = new bootstrap.Modal(document.getElementById('agendaModal'));
+
+    const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        locale: 'id',
+        headerToolbar: {
+            left: 'prev,next today',
+            center: 'title',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay,listMonth'
+        },
+        buttonText: { today: 'Hari Ini', month: 'Bulan', week: 'Minggu', day: 'Hari', list: 'Agenda' },
+        events: '{% url "nakes:agenda_events_api" %}',
+        eventClick: function(info) {
+            const p = info.event.extendedProps;
+            document.getElementById('modalJudul').textContent = info.event.title;
+            document.getElementById('modalJenis').textContent = p.jenis;
+            document.getElementById('modalTempat').textContent = p.tempat;
+
+            const startTime = info.event.start ? info.event.start.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+            const endTime = info.event.end ? info.event.end.toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'}) : '-';
+            const dateStr = info.event.start ? info.event.start.toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'}) : '';
+            document.getElementById('modalWaktu').textContent = dateStr + ', ' + startTime + (info.event.end ? ' – ' + endTime : '');
+            document.getElementById('modalStatus').innerHTML = '<span class="badge" style="background:' + info.event.backgroundColor + ';color:#fff;">' + p.status + '</span>';
+
+            document.getElementById('modalPeserta').textContent = p.peserta;
+            document.getElementById('modalKeterangan').textContent = p.keterangan;
+            document.getElementById('pesertaRow').style.display = p.peserta ? '' : 'none';
+            document.getElementById('keteranganRow').style.display = p.keterangan ? '' : 'none';
+
+            document.getElementById('modalEditBtn').href = p.edit_url;
+            document.getElementById('modalNotulenBtn').href = p.buat_notulen_url;
+            document.getElementById('modalDeleteForm').action = p.delete_url;
+            modal.show();
+        },
+        eventDidMount: function(info) { info.el.title = info.event.title; },
+        height: 'auto',
+        eventTimeFormat: { hour: '2-digit', minute: '2-digit', hour12: false },
+    });
+    calendar.render();
+});
+</script>
+{% endblock %}

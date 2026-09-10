@@ -10,6 +10,7 @@ from .models import (
     Nakes, AuditLog, Profesi, DokumenNakes, DokumenUmum,
     EvaluasiOPPE, EvaluasiMutuKlinis,
     PelanggaranEtik, SidangEtik, EvaluasiKinerjaEtik,
+    AgendaRapat, Regulasi, NotulenRapat,
 )
 
 
@@ -617,4 +618,97 @@ class SubEtikTest(TestCase):
         self.assertEqual(res_list.status_code, 200)
         self.assertContains(res_list, 'Rian Radiologi')
 
+
+class SekretariatTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='sekreuser', password='password123')
+        self.client = Client()
+        self.client.login(username='sekreuser', password='password123')
+
+    def test_agenda_rapat_calendar_and_api(self):
+        agenda = AgendaRapat.objects.create(
+            judul_rapat='Rapat Pleno Komite KTKL Q3 2025',
+            jenis_rapat='Rapat Pleno',
+            tanggal_rapat=datetime.date(2025, 8, 15),
+            waktu_mulai=datetime.time(9, 0),
+            waktu_selesai=datetime.time(11, 0),
+            tempat='Ruang Rapat KTKL',
+            status='Terjadwal',
+            created_by=self.user,
+        )
+        res_cal = self.client.get(reverse('nakes:agenda_calendar'))
+        self.assertEqual(res_cal.status_code, 200)
+        self.assertContains(res_cal, 'Agenda Rapat Komite KTKL')
+
+        res_api = self.client.get(reverse('nakes:agenda_events_api'))
+        self.assertEqual(res_api.status_code, 200)
+        data = res_api.json()
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]['title'], 'Rapat Pleno Komite KTKL Q3 2025')
+        self.assertIn('buat_notulen_url', data[0]['extendedProps'])
+
+        res_create = self.client.post(reverse('nakes:agenda_create'), {
+            'judul_rapat': 'Rapat Rutin Bulanan Agustus 2025',
+            'jenis_rapat': 'Rutin Bulanan',
+            'tanggal_rapat': '2025-08-20',
+            'waktu_mulai': '13:00',
+            'tempat': 'Ruang Rapat',
+            'status': 'Terjadwal',
+        })
+        self.assertEqual(res_create.status_code, 302)
+        self.assertTrue(AgendaRapat.objects.filter(judul_rapat='Rapat Rutin Bulanan Agustus 2025').exists())
+
+    def test_regulasi_crud_and_download_auth(self):
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        pdf_file = SimpleUploadedFile('sk_direktur.pdf', b'%PDF-1.4 dummy content', content_type='application/pdf')
+        res_create = self.client.post(reverse('nakes:regulasi_create'), {
+            'judul': 'SK Direktur Komite KTKL 2025',
+            'nomor_dokumen': '045/SK/DIR/I/2025',
+            'kategori': 'SK Direktur',
+            'tanggal_terbit': '2025-01-10',
+            'tanggal_berlaku': '2025-01-10',
+            'status': 'Berlaku',
+            'file': pdf_file,
+        })
+        self.assertEqual(res_create.status_code, 302)
+        reg = Regulasi.objects.get(nomor_dokumen='045/SK/DIR/I/2025')
+        self.assertEqual(reg.status, 'Berlaku')
+
+        url_dl = reverse('nakes:regulasi_download', args=[reg.pk])
+        res_dl = self.client.get(url_dl)
+        self.assertEqual(res_dl.status_code, 200)
+        res_dl.close()
+
+        anon_client = Client()
+        res_anon = anon_client.get(url_dl)
+        self.assertEqual(res_anon.status_code, 302)
+        self.assertIn('/accounts/', res_anon.url)
+
+        res_list = self.client.get(reverse('nakes:regulasi_list'))
+        self.assertEqual(res_list.status_code, 200)
+        self.assertContains(res_list, 'SK Direktur Komite KTKL 2025')
+
+    def test_notulen_rapat_crud_and_print(self):
+        res_create = self.client.post(reverse('nakes:notulen_create'), {
+            'judul': 'Notulen Rapat Pleno KTKL Q3 2025',
+            'tanggal': '2025-08-15',
+            'waktu_mulai': '09:00',
+            'pimpinan_rapat': 'dr. Krisna Widyo, Sp.PK',
+            'notulis': 'apt. Mariah Ulfah, S.Farm',
+            'agenda_bahasan': 'Evaluasi kredensial semester I 2025',
+            'isi_pembahasan': 'Pembahasan hasil OPPE dan tindak lanjut',
+            'kesimpulan_keputusan': '1. Nakes A diperpanjang SPK\n2. Nakes B dalam pembinaan',
+        })
+        self.assertEqual(res_create.status_code, 302)
+        notulen = NotulenRapat.objects.get(judul='Notulen Rapat Pleno KTKL Q3 2025')
+
+        url_print = reverse('nakes:notulen_detail', args=[notulen.pk])
+        res_print = self.client.get(url_print)
+        self.assertEqual(res_print.status_code, 200)
+        self.assertContains(res_print, 'RS PKU MUHAMMADIYAH GOMBONG')
+        self.assertContains(res_print, 'dr. Krisna Widyo, Sp.PK')
+
+        res_list = self.client.get(reverse('nakes:notulen_list'))
+        self.assertEqual(res_list.status_code, 200)
+        self.assertContains(res_list, 'Notulen Rapat Pleno KTKL Q3 2025')
 
