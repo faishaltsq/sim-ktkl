@@ -77,8 +77,22 @@ PROFESI_MAP = {
     'rm': 'Perekam Medis',
     'apoteker': 'Apoteker',
     'sanitarian': 'Sanitarian',
-    'lainnya': 'Lainnya',
-    'lain': 'Lainnya',
+    'tenagatekniskefarmasian': 'Tenaga Teknik Kefarmasian',
+    'ttk': 'Tenaga Teknik Kefarmasian',
+    'teknikkefarmasian': 'Tenaga Teknik Kefarmasian',
+    'dietisien': 'Dietisien',
+    'elektromedis': 'Elektromedis',
+    'terapiswicara': 'Terapis Wicara',
+    'ortotikprostetik': 'Ortotik Prostetik',
+    'penataanestesi': 'Penata Anestesi',
+    'terapisgigiampmulut': 'Terapis Gigi & Mulut',
+    'terapisgigimulut': 'Terapis Gigi & Mulut',
+    'tem': 'Terapis Gigi & Mulut',
+    'perawatgigiampmulut': 'Perawat Gigi & Mulut',
+    'perawatgigimulut': 'Perawat Gigi & Mulut',
+    'teknisbankdarah': 'Teknis Bank Darah',
+    'psikologklinis': 'Psikolog Klinis',
+    'psikolog': 'Psikolog Klinis',
 }
 
 STATUS_MAP = {
@@ -191,19 +205,8 @@ def dashboard(request):
         .order_by('-jumlah')
         .values('nama', 'jumlah')
     )
-
-    # Merge variasi "Lainnya" jadi satu bucket
-    LAINNYA_ALIASES = {'lainnya', 'lain', 'lain-lain', 'others', 'other', 'dll'}
-    merged = {}
-    for p in profesi_stats:
-        key = 'Lainnya' if p['nama'].strip().lower() in LAINNYA_ALIASES else p['nama']
-        merged[key] = merged.get(key, 0) + p['jumlah']
-    profesi_stats_clean = sorted(
-        [{'nama': k, 'jumlah': v} for k, v in merged.items()],
-        key=lambda x: -x['jumlah']
-    )
-    profesi_labels = json.dumps([p['nama'] for p in profesi_stats_clean])
-    profesi_values = json.dumps([p['jumlah'] for p in profesi_stats_clean])
+    profesi_labels = json.dumps([p['nama'] for p in profesi_stats])
+    profesi_values = json.dumps([p['jumlah'] for p in profesi_stats])
 
     # Nakes unik at risk (no duplicate per nakes)
     seen_ids = set()
@@ -463,7 +466,12 @@ def download_template(request):
     q = '"'
     profesi_names = list(Profesi.objects.order_by('nama').values_list('nama', flat=True))
     if not profesi_names:
-        profesi_names = ['ATLM', 'Radiografer', 'Fisioterapis', 'Nutrisionis', 'Perekam Medis', 'Apoteker', 'Sanitarian', 'Lainnya']
+        profesi_names = [
+            'ATLM', 'Radiografer', 'Fisioterapis', 'Nutrisionis', 'Perekam Medis',
+            'Apoteker', 'Sanitarian', 'Tenaga Teknik Kefarmasian', 'Dietisien',
+            'Elektromedis', 'Terapis Wicara', 'Ortotik Prostetik', 'Penata Anestesi',
+            'Terapis Gigi & Mulut', 'Perawat Gigi & Mulut', 'Teknis Bank Darah', 'Psikolog Klinis',
+        ]
     dv_profesi = DataValidation(
         type='list',
         formula1=f'{q}{",".join(profesi_names)}{q}',
