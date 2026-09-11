@@ -263,33 +263,33 @@
                             </tr>
                         </thead>
                         <tbody>
-                            {% for n in warnings|slice:":5" %}
+                            {% for n in nakes_at_risk %}
                             <tr>
                                 <td>
-                                    <a href="{% url 'nakes:detail' n.nakes.pk %}" class="fw-bold text-decoration-none" style="color:var(--text-primary);">
-                                        {{ n.nakes.nama }}
+                                    <a href="{% url 'nakes:detail' n.pk %}" class="fw-bold text-decoration-none" style="color:var(--text-primary);">
+                                        {{ n.nama }}
                                     </a>
                                 </td>
-                                <td><span class="badge badge-status-info">{{ n.nakes.profesi.nama }}</span></td>
-                                <td style="color:var(--text-secondary);">{{ n.nakes.unit_kerja }}</td>
+                                <td><span class="badge badge-status-info">{{ n.profesi.nama }}</span></td>
+                                <td style="color:var(--text-secondary);">{{ n.unit_kerja }}</td>
                                 <td>
-                                    {% if n.nakes.status_kredensial == "Selesai" %}
+                                    {% if n.status_kredensial == "Selesai" %}
                                     <span class="badge badge-status-success">Selesai</span>
-                                    {% elif n.nakes.status_kredensial == "Dalam Proses" %}
+                                    {% elif n.status_kredensial == "Dalam Proses" %}
                                     <span class="badge badge-status-warning">Dalam Proses</span>
                                     {% else %}
-                                    <span class="badge badge-status-neutral">{{ n.nakes.status_kredensial }}</span>
+                                    <span class="badge badge-status-neutral">{{ n.status_kredensial }}</span>
                                     {% endif %}
                                 </td>
                                 <td>
-                                    {% if n.nakes.kewenangan_klinis == "Aktif" %}
+                                    {% if n.kewenangan_klinis == "Aktif" %}
                                     <span class="badge badge-status-success">Aktif</span>
                                     {% else %}
-                                    <span class="badge badge-status-warning">{{ n.nakes.kewenangan_klinis }}</span>
+                                    <span class="badge badge-status-warning">{{ n.kewenangan_klinis }}</span>
                                     {% endif %}
                                 </td>
                                 <td class="text-end">
-                                    <a href="{% url 'nakes:detail' n.nakes.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.7rem;padding:0.2rem 0.5rem;">
+                                    <a href="{% url 'nakes:detail' n.pk %}" class="btn btn-sm btn-outline-primary" style="font-size:0.7rem;padding:0.2rem 0.5rem;">
                                         Detail
                                     </a>
                                 </td>

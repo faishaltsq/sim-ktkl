@@ -191,8 +191,30 @@ def dashboard(request):
         .order_by('-jumlah')
         .values('nama', 'jumlah')
     )
-    profesi_labels = json.dumps([p['nama'] for p in profesi_stats])
-    profesi_values = json.dumps([p['jumlah'] for p in profesi_stats])
+
+    # Merge variasi "Lainnya" jadi satu bucket
+    LAINNYA_ALIASES = {'lainnya', 'lain', 'lain-lain', 'others', 'other', 'dll'}
+    merged = {}
+    for p in profesi_stats:
+        key = 'Lainnya' if p['nama'].strip().lower() in LAINNYA_ALIASES else p['nama']
+        merged[key] = merged.get(key, 0) + p['jumlah']
+    profesi_stats_clean = sorted(
+        [{'nama': k, 'jumlah': v} for k, v in merged.items()],
+        key=lambda x: -x['jumlah']
+    )
+    profesi_labels = json.dumps([p['nama'] for p in profesi_stats_clean])
+    profesi_values = json.dumps([p['jumlah'] for p in profesi_stats_clean])
+
+    # Nakes unik at risk (no duplicate per nakes)
+    seen_ids = set()
+    nakes_at_risk = []
+    for w in warnings:
+        nid = w['nakes'].pk
+        if nid not in seen_ids:
+            seen_ids.add(nid)
+            nakes_at_risk.append(w['nakes'])
+            if len(nakes_at_risk) >= 5:
+                break
 
     context = {
         'total': total,
@@ -201,6 +223,7 @@ def dashboard(request):
         'expired_count': expired_count,
         'near_expiry_count': near_expiry_count,
         'warnings': warnings,
+        'nakes_at_risk': nakes_at_risk,
         'profesi_labels': profesi_labels,
         'profesi_values': profesi_values,
     }
