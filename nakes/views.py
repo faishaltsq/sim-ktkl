@@ -362,21 +362,29 @@ def audit_log(request):
 
 @login_required
 def export_excel(request):
+    from itertools import groupby
+
     profesi_pk = request.GET.get('profesi', '').strip()
 
     if profesi_pk:
         profesi_obj = get_object_or_404(Profesi, pk=profesi_pk)
-        qs = Nakes.objects.filter(profesi=profesi_obj).select_related('profesi').order_by('nama')
+        qs_all = list(
+            Nakes.objects.filter(profesi=profesi_obj)
+            .select_related('profesi')
+            .order_by('unit_kerja', 'nama')
+        )
         safe_name = profesi_obj.nama.replace(' ', '_').replace('&', 'dan').replace('/', '_')
         filename = f'data_nakes_{safe_name}.xlsx'
-        profesi_groups = [(profesi_obj.nama, list(qs))]
     else:
-        qs_all = list(Nakes.objects.select_related('profesi').order_by('profesi__nama', 'nama'))
-        from itertools import groupby
-        profesi_groups = []
-        for key, group in groupby(qs_all, key=lambda n: n.profesi.nama):
-            profesi_groups.append((key, list(group)))
-        filename = 'data_nakes_semua_profesi.xlsx'
+        qs_all = list(
+            Nakes.objects.select_related('profesi')
+            .order_by('unit_kerja', 'nama')
+        )
+        filename = 'data_nakes_semua.xlsx'
+
+    groups = []
+    for key, grp in groupby(qs_all, key=lambda n: n.unit_kerja.strip() if n.unit_kerja else '(Tanpa Unit)'):
+        groups.append((key, list(grp)))
 
     wb = Workbook()
     ws = wb.active
@@ -401,25 +409,22 @@ def export_excel(request):
         cell.font = header_font
         cell.alignment = center
         cell.border = border
-
     ws.row_dimensions[1].height = 24
 
     fill_red = PatternFill(start_color='FFCDD2', end_color='FFCDD2', fill_type='solid')
     fill_yellow = PatternFill(start_color='FFF9C4', end_color='FFF9C4', fill_type='solid')
     fill_green = PatternFill(start_color='C8E6C9', end_color='C8E6C9', fill_type='solid')
-
     section_fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
     section_font = Font(bold=True, size=10, color='1E293B')
     section_align = Alignment(horizontal='left', vertical='center')
 
     today = date.today()
 
-    for profesi_nama, nakes_items in profesi_groups:
+    for unit_nama, nakes_items in groups:
         row_sec = ws.max_row + 1
-        section_text = f'{profesi_nama.upper()} ({len(nakes_items)} praktisi)'
+        section_text = f'{unit_nama} ({len(nakes_items)} nakes)'
         ws.cell(row=row_sec, column=1, value=section_text)
         ws.merge_cells(start_row=row_sec, start_column=1, end_row=row_sec, end_column=len(headers))
-
         for c in range(1, len(headers) + 1):
             cell = ws.cell(row=row_sec, column=c)
             cell.fill = section_fill
@@ -429,33 +434,24 @@ def export_excel(request):
         ws.row_dimensions[row_sec].height = 22
 
         for n in nakes_items:
-            row_data = [
+            ws.append([
                 n.nama, str(n.profesi), n.unit_kerja,
                 n.no_str, n.masa_berlaku_str.isoformat(),
                 n.no_sip, n.masa_berlaku_sip.isoformat(),
                 n.status_kredensial, n.kewenangan_klinis,
                 n.catatan,
-            ]
-            ws.append(row_data)
-
+            ])
             sisa_str = (n.masa_berlaku_str - today).days
             sisa_sip = (n.masa_berlaku_sip - today).days
             worst = min(sisa_str, sisa_sip)
-
-            if worst < 0:
-                row_fill = fill_red
-            elif worst <= 180:
-                row_fill = fill_yellow
-            else:
-                row_fill = fill_green
-
+            row_fill = fill_red if worst < 0 else (fill_yellow if worst <= 180 else fill_green)
             data_row_idx = ws.max_row
             for col in range(1, len(headers) + 1):
                 cell = ws.cell(row=data_row_idx, column=col)
                 cell.fill = row_fill
                 cell.border = border
 
-    col_widths = [25, 22, 20, 18, 18, 18, 18, 18, 16, 30]
+    col_widths = [25, 22, 28, 18, 18, 18, 18, 18, 16, 30]
     for col, width in enumerate(col_widths, 1):
         ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
 
