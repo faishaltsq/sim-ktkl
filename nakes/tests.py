@@ -237,15 +237,63 @@ class NakesFormAndExportTest(TestCase):
         header_cell = ws.cell(row=1, column=1)
         self.assertEqual(header_cell.fill.start_color.rgb, '000C7C84')
 
+        # Skip section header rows (merged cells dengan teks uppercase profesi)
         color_map = {}
         for row_idx in range(2, ws.max_row + 1):
             nama = ws.cell(row=row_idx, column=1).value
-            rgb = ws.cell(row=row_idx, column=1).fill.start_color.rgb
-            color_map[nama] = rgb
+            profesi_col = ws.cell(row=row_idx, column=2).value
+            if nama and profesi_col:  # data rows punya nilai di kolom Profesi
+                rgb = ws.cell(row=row_idx, column=1).fill.start_color.rgb
+                color_map[nama] = rgb
 
         self.assertEqual(color_map['Nakes Expired'], '00FFCDD2')
         self.assertEqual(color_map['Nakes Warning'], '00FFF9C4')
         self.assertEqual(color_map['Nakes Safe'], '00C8E6C9')
+
+    def test_export_excel_per_profesi(self):
+        today = datetime.date.today()
+        p_atlm, _ = Profesi.objects.get_or_create(nama='ATLM')
+        p_rad, _ = Profesi.objects.get_or_create(nama='Radiografer')
+
+        Nakes.objects.create(
+            nama='Nakes ATLM Satu',
+            profesi=p_atlm,
+            unit_kerja='Laboratorium',
+            no_str='STR-EXP-ATLM',
+            masa_berlaku_str=today + datetime.timedelta(days=400),
+            no_sip='SIP-EXP-ATLM',
+            masa_berlaku_sip=today + datetime.timedelta(days=400),
+            created_by=self.user,
+        )
+        Nakes.objects.create(
+            nama='Nakes Radiografer Satu',
+            profesi=p_rad,
+            unit_kerja='Radiologi',
+            no_str='STR-EXP-RAD',
+            masa_berlaku_str=today + datetime.timedelta(days=400),
+            no_sip='SIP-EXP-RAD',
+            masa_berlaku_sip=today + datetime.timedelta(days=400),
+            created_by=self.user,
+        )
+
+        # Export per profesi ATLM saja
+        url = reverse('nakes:export') + f'?profesi={p_atlm.pk}'
+        res = self.client.get(url)
+        self.assertEqual(res.status_code, 200)
+        self.assertIn('data_nakes_ATLM', res.get('Content-Disposition', ''))
+
+        wb = openpyxl.load_workbook(io.BytesIO(res.content))
+        ws = wb.active
+
+        # Pastikan hanya ATLM yang masuk, tidak ada Radiografer
+        profesi_values = []
+        for row_idx in range(2, ws.max_row + 1):
+            profesi_val = ws.cell(row=row_idx, column=2).value
+            if profesi_val and profesi_val != 'Profesi':
+                profesi_values.append(profesi_val)
+
+        self.assertNotIn('Radiografer', profesi_values)
+        self.assertIn('ATLM', profesi_values)
 
 
 class DokumenUploadQATest(TestCase):

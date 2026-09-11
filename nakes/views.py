@@ -240,7 +240,8 @@ def nakes_list(request):
     q = request.GET.get('q', '').strip()
     if q:
         qs = qs.filter(Q(nama__icontains=q) | Q(profesi__nama__icontains=q))
-    context = {'nakes_list': qs, 'form': form, 'q': q}
+    profesi_list = Profesi.objects.annotate(jumlah=Count('nakes_list')).filter(jumlah__gt=0).order_by('nama')
+    context = {'nakes_list': qs, 'form': form, 'q': q, 'profesi_list': profesi_list}
     return render(request, 'nakes/nakes_list.html', context)
 
 
@@ -361,6 +362,22 @@ def audit_log(request):
 
 @login_required
 def export_excel(request):
+    profesi_pk = request.GET.get('profesi', '').strip()
+
+    if profesi_pk:
+        profesi_obj = get_object_or_404(Profesi, pk=profesi_pk)
+        qs = Nakes.objects.filter(profesi=profesi_obj).select_related('profesi').order_by('nama')
+        safe_name = profesi_obj.nama.replace(' ', '_').replace('&', 'dan').replace('/', '_')
+        filename = f'data_nakes_{safe_name}.xlsx'
+        profesi_groups = [(profesi_obj.nama, list(qs))]
+    else:
+        qs_all = list(Nakes.objects.select_related('profesi').order_by('profesi__nama', 'nama'))
+        from itertools import groupby
+        profesi_groups = []
+        for key, group in groupby(qs_all, key=lambda n: n.profesi.nama):
+            profesi_groups.append((key, list(group)))
+        filename = 'data_nakes_semua_profesi.xlsx'
+
     wb = Workbook()
     ws = wb.active
     ws.title = 'Data Nakes'
@@ -391,42 +408,61 @@ def export_excel(request):
     fill_yellow = PatternFill(start_color='FFF9C4', end_color='FFF9C4', fill_type='solid')
     fill_green = PatternFill(start_color='C8E6C9', end_color='C8E6C9', fill_type='solid')
 
+    section_fill = PatternFill(start_color='E2E8F0', end_color='E2E8F0', fill_type='solid')
+    section_font = Font(bold=True, size=10, color='1E293B')
+    section_align = Alignment(horizontal='left', vertical='center')
+
     today = date.today()
-    for n in Nakes.objects.select_related('profesi').all():
-        row_data = [
-            n.nama, str(n.profesi), n.unit_kerja,
-            n.no_str, n.masa_berlaku_str.isoformat(),
-            n.no_sip, n.masa_berlaku_sip.isoformat(),
-            n.status_kredensial, n.kewenangan_klinis,
-            n.catatan,
-        ]
-        ws.append(row_data)
 
-        sisa_str = (n.masa_berlaku_str - today).days
-        sisa_sip = (n.masa_berlaku_sip - today).days
-        worst = min(sisa_str, sisa_sip)
+    for profesi_nama, nakes_items in profesi_groups:
+        row_sec = ws.max_row + 1
+        section_text = f'{profesi_nama.upper()} ({len(nakes_items)} praktisi)'
+        ws.cell(row=row_sec, column=1, value=section_text)
+        ws.merge_cells(start_row=row_sec, start_column=1, end_row=row_sec, end_column=len(headers))
 
-        if worst < 0:
-            row_fill = fill_red
-        elif worst <= 180:
-            row_fill = fill_yellow
-        else:
-            row_fill = fill_green
-
-        row_idx = ws.max_row
-        for col in range(1, len(headers) + 1):
-            cell = ws.cell(row=row_idx, column=col)
-            cell.fill = row_fill
+        for c in range(1, len(headers) + 1):
+            cell = ws.cell(row=row_sec, column=c)
+            cell.fill = section_fill
+            cell.font = section_font
+            cell.alignment = section_align
             cell.border = border
+        ws.row_dimensions[row_sec].height = 22
 
-    col_widths = [25, 18, 20, 18, 18, 18, 18, 18, 16, 30]
+        for n in nakes_items:
+            row_data = [
+                n.nama, str(n.profesi), n.unit_kerja,
+                n.no_str, n.masa_berlaku_str.isoformat(),
+                n.no_sip, n.masa_berlaku_sip.isoformat(),
+                n.status_kredensial, n.kewenangan_klinis,
+                n.catatan,
+            ]
+            ws.append(row_data)
+
+            sisa_str = (n.masa_berlaku_str - today).days
+            sisa_sip = (n.masa_berlaku_sip - today).days
+            worst = min(sisa_str, sisa_sip)
+
+            if worst < 0:
+                row_fill = fill_red
+            elif worst <= 180:
+                row_fill = fill_yellow
+            else:
+                row_fill = fill_green
+
+            data_row_idx = ws.max_row
+            for col in range(1, len(headers) + 1):
+                cell = ws.cell(row=data_row_idx, column=col)
+                cell.fill = row_fill
+                cell.border = border
+
+    col_widths = [25, 22, 20, 18, 18, 18, 18, 18, 16, 30]
     for col, width in enumerate(col_widths, 1):
         ws.column_dimensions[ws.cell(row=1, column=col).column_letter].width = width
 
     response = HttpResponse(
         content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
     )
-    response['Content-Disposition'] = 'attachment; filename="data_nakes.xlsx"'
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
     wb.save(response)
     return response
 

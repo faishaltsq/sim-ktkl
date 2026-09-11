@@ -12,7 +12,25 @@
     <div class="d-flex gap-2 flex-wrap">
         <a href="{% url 'nakes:upload_bulk' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-upload me-1"></i>Import Bulk</a>
         <a href="{% url 'nakes:download_template' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-arrow-down me-1"></i>Template</a>
-        <a href="{% url 'nakes:export' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-download me-1"></i>Export</a>
+        <div class="btn-group">
+            <a href="{% url 'nakes:export' %}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-download me-1"></i>Export Semua
+            </a>
+            <button type="button" class="btn btn-sm btn-outline-primary dropdown-toggle dropdown-toggle-split" data-bs-toggle="dropdown">
+                <span class="visually-hidden">Toggle Dropdown</span>
+            </button>
+            <ul class="dropdown-menu dropdown-menu-end" style="max-height:360px;overflow-y:auto;">
+                <li><h6 class="dropdown-header">Export per Profesi</h6></li>
+                {% for p in profesi_list %}
+                <li>
+                    <a class="dropdown-item" href="{% url 'nakes:export' %}?profesi={{ p.pk }}" style="font-size:0.82rem;">
+                        <i class="bi bi-people me-2 text-muted"></i>{{ p.nama }}
+                        <span class="text-muted ms-1" style="font-size:0.72rem;">({{ p.jumlah }})</span>
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
         <a href="{% url 'nakes:create' %}" class="btn btn-sm btn-primary"><i class="bi bi-person-plus me-1"></i>Tambah Nakes</a>
     </div>
 </div>
