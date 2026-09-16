@@ -116,6 +116,22 @@ KEWENANGAN_MAP = {
 
 SAMPLE_STRS = {'STR-001-2021', 'STR-002-2022', 'STR-CONTOH', 'STR-SAMPLE'}
 
+DEMO_USERNAME = 'demo'
+
+
+def is_demo(user):
+    return user.is_authenticated and user.username == DEMO_USERNAME
+
+
+def demo_qs(qs, user, field='created_by'):
+    """
+    Jika user demo: tampilkan HANYA baris milik user demo.
+    Jika user biasa: sembunyikan semua baris milik user demo.
+    """
+    if is_demo(user):
+        return qs.filter(**{f'{field}__username': DEMO_USERNAME})
+    return qs.exclude(**{f'{field}__username': DEMO_USERNAME})
+
 
 def clean_alphanumeric(val):
     if val is None:
@@ -162,7 +178,7 @@ def log_audit(user, aksi, obj, detail=''):
 @login_required
 def dashboard(request):
     today = date.today()
-    nakes_list = Nakes.objects.select_related('profesi').all()
+    nakes_list = demo_qs(Nakes.objects.select_related('profesi'), request.user).all()
     total = nakes_list.count()
     kredensial_selesai = nakes_list.filter(status_kredensial='Selesai').count()
     kewenangan_aktif = nakes_list.filter(kewenangan_klinis='Aktif').count()
@@ -199,8 +215,11 @@ def dashboard(request):
     warnings.sort(key=lambda x: x['sisa'])
 
     import json
+    prof_filter = {'nakes_list__created_by__username': DEMO_USERNAME} if is_demo(request.user) else {}
+    prof_exclude = {} if is_demo(request.user) else {'nakes_list__created_by__username': DEMO_USERNAME}
     profesi_stats = list(
-        Profesi.objects.annotate(jumlah=Count('nakes_list'))
+        Profesi.objects.filter(**prof_filter).exclude(**prof_exclude)
+        .annotate(jumlah=Count('nakes_list'))
         .filter(jumlah__gt=0)
         .order_by('-jumlah')
         .values('nama', 'jumlah')
@@ -236,7 +255,7 @@ def dashboard(request):
 @login_required
 def nakes_list(request):
     form = NakesSearchForm(request.GET)
-    qs = Nakes.objects.select_related('profesi').all()
+    qs = demo_qs(Nakes.objects.select_related('profesi'), request.user)
     q = request.GET.get('q', '').strip()
     if q:
         qs = qs.filter(Q(nama__icontains=q) | Q(profesi__nama__icontains=q))
@@ -356,7 +375,7 @@ def dokumen_delete(request, pk):
 
 @login_required
 def audit_log(request):
-    logs = AuditLog.objects.select_related('user').all()[:200]
+    logs = demo_qs(AuditLog.objects.select_related('user'), request.user, field='user').all()[:200]
     return render(request, 'nakes/audit_log.html', {'logs': logs})
 
 
@@ -369,15 +388,14 @@ def export_excel(request):
     if profesi_pk:
         profesi_obj = get_object_or_404(Profesi, pk=profesi_pk)
         qs_all = list(
-            Nakes.objects.filter(profesi=profesi_obj)
-            .select_related('profesi')
+            demo_qs(Nakes.objects.filter(profesi=profesi_obj).select_related('profesi'), request.user)
             .order_by('unit_kerja', 'nama')
         )
         safe_name = profesi_obj.nama.replace(' ', '_').replace('&', 'dan').replace('/', '_')
         filename = f'data_nakes_{safe_name}.xlsx'
     else:
         qs_all = list(
-            Nakes.objects.select_related('profesi')
+            demo_qs(Nakes.objects.select_related('profesi'), request.user)
             .order_by('unit_kerja', 'nama')
         )
         filename = 'data_nakes_semua.xlsx'
@@ -775,13 +793,13 @@ def dokumen_hub(request):
     q = request.GET.get('q', '').strip()
     kategori = request.GET.get('kategori', '')
 
-    dokumen_nakes = DokumenNakes.objects.select_related('nakes', 'uploaded_by').all()
+    dokumen_nakes = demo_qs(DokumenNakes.objects.select_related('nakes', 'uploaded_by'), request.user, field='uploaded_by')
     if q:
         dokumen_nakes = dokumen_nakes.filter(
             Q(nama_file__icontains=q) | Q(nakes__nama__icontains=q)
         )
 
-    dokumen_umum = DokumenUmum.objects.select_related('uploaded_by').all()
+    dokumen_umum = demo_qs(DokumenUmum.objects.select_related('uploaded_by'), request.user, field='uploaded_by')
     if q and tab == 'umum':
         dokumen_umum = dokumen_umum.filter(
             Q(judul__icontains=q) | Q(deskripsi__icontains=q)
@@ -875,7 +893,7 @@ def dokumen_umum_delete(request, pk):
 
 @login_required
 def oppe_list(request):
-    qs = EvaluasiOPPE.objects.select_related('nakes', 'nakes__profesi').all()
+    qs = demo_qs(EvaluasiOPPE.objects.select_related('nakes', 'nakes__profesi'), request.user)
     q = request.GET.get('q', '').strip()
     tahun = request.GET.get('tahun', '').strip()
     grade = request.GET.get('grade', '').strip()
@@ -965,7 +983,7 @@ def oppe_delete(request, pk):
 
 @login_required
 def mutu_list(request):
-    qs = EvaluasiMutuKlinis.objects.all()
+    qs = demo_qs(EvaluasiMutuKlinis.objects.all(), request.user)
     q = request.GET.get('q', '').strip()
     unit = request.GET.get('unit', '').strip()
     tahun = request.GET.get('tahun', '').strip()
@@ -1063,7 +1081,7 @@ def mutu_delete(request, pk):
 
 @login_required
 def pelanggaran_list(request):
-    qs = PelanggaranEtik.objects.select_related('nakes', 'nakes__profesi').all()
+    qs = demo_qs(PelanggaranEtik.objects.select_related('nakes', 'nakes__profesi'), request.user)
     q = request.GET.get('q', '').strip()
     kategori = request.GET.get('kategori', '').strip()
     status = request.GET.get('status', '').strip()
@@ -1136,7 +1154,7 @@ def sidang_calendar(request):
 
 @login_required
 def sidang_events_api(request):
-    qs = SidangEtik.objects.select_related('nakes', 'nakes__profesi').all()
+    qs = demo_qs(SidangEtik.objects.select_related('nakes', 'nakes__profesi'), request.user)
     color_map = {
         'Terjadwal': '#0C7C84',
         'Selesai': '#059669',
@@ -1215,7 +1233,7 @@ def sidang_delete(request, pk):
 
 @login_required
 def evaluasi_etik_list(request):
-    qs = EvaluasiKinerjaEtik.objects.select_related('nakes', 'nakes__profesi').all()
+    qs = demo_qs(EvaluasiKinerjaEtik.objects.select_related('nakes', 'nakes__profesi'), request.user)
     q = request.GET.get('q', '').strip()
     tahun = request.GET.get('tahun', '').strip()
     predikat = request.GET.get('predikat', '').strip()
@@ -1291,7 +1309,7 @@ def agenda_calendar(request):
 
 @login_required
 def agenda_events_api(request):
-    qs = AgendaRapat.objects.all()
+    qs = demo_qs(AgendaRapat.objects.all(), request.user)
     color_map = {
         'Terjadwal': '#0C7C84',
         'Selesai': '#059669',
@@ -1370,7 +1388,7 @@ def agenda_delete(request, pk):
 
 @login_required
 def regulasi_list(request):
-    qs = Regulasi.objects.all()
+    qs = demo_qs(Regulasi.objects.all(), request.user)
     q = request.GET.get('q', '').strip()
     kategori = request.GET.get('kategori', '').strip()
     status = request.GET.get('status', '').strip()
@@ -1459,7 +1477,7 @@ def regulasi_delete(request, pk):
 
 @login_required
 def notulen_list(request):
-    qs = NotulenRapat.objects.select_related('agenda_rapat').all()
+    qs = demo_qs(NotulenRapat.objects.select_related('agenda_rapat'), request.user)
     q = request.GET.get('q', '').strip()
     tahun = request.GET.get('tahun', '').strip()
 
