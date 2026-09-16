@@ -1559,3 +1559,10 @@ def notulen_delete(request, pk):
         obj.delete()
         messages.success(request, 'Notulen rapat berhasil dihapus.')
     return redirect('nakes:notulen_list')
+
+
+def demo_clear_flag(request):
+    """Clear readonly_triggered session flag after popup shown."""
+    if request.user.is_authenticated and request.user.username == 'demo':
+        request.session.pop('readonly_triggered', None)
+    return JsonResponse({'ok': True})

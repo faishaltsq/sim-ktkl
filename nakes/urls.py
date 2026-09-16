@@ -69,4 +69,5 @@ urlpatterns = [
     path('sekretariat/notulen/<int:pk>/edit/', views.notulen_update, name='notulen_update'),
     path('sekretariat/notulen/<int:pk>/download/', views.notulen_download, name='notulen_download'),
     path('sekretariat/notulen/<int:pk>/hapus/', views.notulen_delete, name='notulen_delete'),
+    path('demo/clear-flag/', views.demo_clear_flag, name='demo_clear_flag'),
 ]

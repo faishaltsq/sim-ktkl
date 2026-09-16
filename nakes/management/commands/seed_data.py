@@ -83,6 +83,18 @@ class Command(BaseCommand):
             pengurus.save()
             self.stdout.write(self.style.SUCCESS('User pengurus dibuat (password: pengurus123)'))
 
+        demo_user, created = User.objects.get_or_create(
+            username='demo',
+            defaults={
+                'is_staff': False,
+                'first_name': 'Tamu',
+                'last_name': '(Demo)',
+            }
+        )
+        demo_user.set_password('demo123')
+        demo_user.save()
+        self.stdout.write(self.style.SUCCESS('User demo dibuat/diperbarui (password: demo123)'))
+
         for nama in DEFAULT_PROFESI:
             _, created = Profesi.objects.get_or_create(nama=nama)
             if created:

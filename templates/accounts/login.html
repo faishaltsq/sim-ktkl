@@ -210,6 +210,20 @@
                     </div>
                     <button type="submit" class="btn-login mt-1">Masuk</button>
                 </form>
+
+                <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #E2E8F0;text-align:center;">
+                    <p style="font-size:0.78rem;color:#94A3B8;margin-bottom:0.6rem;">Ingin melihat isi sistem?</p>
+                    <form method="post" action="{% url 'accounts:login' %}">
+                        {% csrf_token %}
+                        <input type="hidden" name="username" value="demo">
+                        <input type="hidden" name="password" value="demo123">
+                        {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
+                        <button type="submit" style="width:100%;padding:0.6rem;font-weight:600;font-size:0.82rem;border-radius:0.375rem;border:1.5px solid #D97706;background:#FFF8F0;color:#B45309;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
+                            <i class="bi bi-eye" style="font-size:1rem;"></i> Masuk Sebagai Demo
+                            <span style="font-size:0.68rem;background:#FDE68A;color:#92400E;padding:0.15em 0.5em;border-radius:9999px;font-weight:700;">Read Only</span>
+                        </button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

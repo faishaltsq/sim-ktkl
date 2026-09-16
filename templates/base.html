@@ -628,6 +628,13 @@
         </header>
 
         <main class="content-area">
+            {% if request.user.username == 'demo' %}
+            <div style="background:linear-gradient(90deg,#F59E0B,#D97706);color:#fff;padding:0.55rem 1rem;border-radius:0.5rem;margin-bottom:1rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;font-size:0.82rem;font-weight:600;box-shadow:0 2px 6px rgba(217,119,6,0.3);">
+                <span><i class="bi bi-eye me-2"></i>Mode Demo — Akun ini hanya bisa melihat data. Semua aksi tambah, edit, dan hapus dinonaktifkan.</span>
+                <span class="badge" style="background:rgba(255,255,255,0.2);color:#fff;font-size:0.72rem;white-space:nowrap;">Read Only</span>
+            </div>
+            {% endif %}
+
             {% if messages %}
                 {% for message in messages %}
                     <div class="alert alert-{{ message.tags }} alert-dismissible fade show py-2 mb-3 shadow-sm" role="alert">
@@ -643,5 +650,70 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     {% block extra_js %}{% endblock %}
+
+    {% if request.user.username == 'demo' %}
+    <!-- READ-ONLY POPUP MODAL -->
+    <div class="modal fade" id="readonlyModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-sm">
+            <div class="modal-content" style="border-radius:0.75rem;border:none;overflow:hidden;">
+                <div style="background:linear-gradient(135deg,#F59E0B,#D97706);padding:1.25rem 1.5rem 1rem;text-align:center;">
+                    <div style="width:52px;height:52px;background:rgba(255,255,255,0.2);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 0.75rem;">
+                        <i class="bi bi-lock-fill" style="font-size:1.5rem;color:#fff;"></i>
+                    </div>
+                    <h6 style="margin:0;color:#fff;font-size:1rem;font-weight:800;">Akses Read Only</h6>
+                </div>
+                <div class="modal-body text-center" style="padding:1.25rem 1.5rem;">
+                    <p style="margin:0;font-size:0.85rem;color:#475569;line-height:1.6;">
+                        Akun <strong>Demo</strong> tidak diizinkan melakukan operasi <strong>tambah, edit, atau hapus</strong> data.<br><br>
+                        Silakan login menggunakan akun resmi untuk mengakses fitur penuh.
+                    </p>
+                </div>
+                <div class="modal-footer justify-content-center" style="border-top:1px solid #E2E8F0;padding:0.75rem 1rem;">
+                    <button type="button" class="btn btn-sm btn-primary" data-bs-dismiss="modal" style="min-width:100px;">Mengerti</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var modal = document.getElementById('readonlyModal');
+
+        {% if request.session.readonly_triggered %}
+        // Server-side intercepted a POST → show popup
+        new bootstrap.Modal(modal).show();
+        // Clear session flag so it doesn't fire again on next page load
+        fetch("{% url 'nakes:demo_clear_flag' %}", {method:'GET'}).catch(function(){});
+        {% endif %}
+
+        // Client-side: intercept form submits (non-GET) for better UX
+        document.querySelectorAll('form').forEach(function(form) {
+            // Skip logout form
+            if ((form.getAttribute('action') || '').indexOf('/logout/') !== -1) return;
+
+            form.addEventListener('submit', function(e) {
+                var method = (form.getAttribute('method') || 'get').toLowerCase();
+                if (method !== 'get') {
+                    e.preventDefault();
+                    e.stopImmediatePropagation();
+                    new bootstrap.Modal(modal).show();
+                }
+            });
+        });
+
+        // Client-side: intercept links to mutating URLs
+        var mutatePatterns = [/\/tambah\/?/, /\/edit\/?/, /\/hapus\/?/, /\/upload\/?/, /\/import\/?/];
+        document.querySelectorAll('a[href]').forEach(function(a) {
+            var href = a.getAttribute('href') || '';
+            if (mutatePatterns.some(function(p){ return p.test(href); })) {
+                a.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    new bootstrap.Modal(modal).show();
+                });
+            }
+        });
+    });
+    </script>
+    {% endif %}
 </body>
 </html>

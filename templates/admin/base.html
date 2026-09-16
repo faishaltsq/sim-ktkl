@@ -5,6 +5,13 @@
 {{ block.super }}
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+    {% if request.user.username == 'demo' %}
+    /* Hide all write controls for demo user in admin */
+    .submit-row, .object-tools .addlink, .object-tools .changelink,
+    input[type=submit], .deletelink, #toolbar,
+    .actions, select[name=action], button[name=index] { display: none !important; }
+    .resulttable input[type=checkbox] { pointer-events: none; opacity: 0.3; }
+    {% endif %}
     :root {
         --primary: #0C7C84;
         --primary-deep: #065A60;
