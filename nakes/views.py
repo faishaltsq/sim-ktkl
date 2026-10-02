@@ -1579,8 +1579,46 @@ def notulen_delete(request, pk):
     return redirect('nakes:notulen_list')
 
 
+import io
+import os
+import zipfile
+from pathlib import Path
+from django.conf import settings
+from django.core.management import call_command
+from django.contrib.auth.decorators import user_passes_test
+
+
 def demo_clear_flag(request):
     """Clear readonly_triggered session flag after popup shown."""
     if request.user.is_authenticated and request.user.username == 'demo':
         request.session.pop('readonly_triggered', None)
     return JsonResponse({'ok': True})
+
+
+@user_passes_test(lambda u: u.is_superuser)
+def admin_backup_dump(request):
+    out = io.StringIO()
+    call_command('dumpdata', indent=2, stdout=out)
+    data = out.getvalue()
+
+    zip_buffer = io.BytesIO()
+    with zipfile.ZipFile(zip_buffer, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.writestr('dumpdata.json', data)
+        db_path = Path(settings.BASE_DIR) / 'db.sqlite3'
+        if db_path.exists():
+            try:
+                zf.write(db_path, arcname='db.sqlite3')
+            except Exception as e:
+                zf.writestr('sqlite_error.txt', str(e))
+        if hasattr(settings, 'MEDIA_ROOT') and os.path.exists(settings.MEDIA_ROOT):
+            for root, dirs, files in os.walk(settings.MEDIA_ROOT):
+                for file in files:
+                    fp = Path(root) / file
+                    try:
+                        zf.write(fp, arcname=str(Path('media') / fp.relative_to(settings.MEDIA_ROOT)))
+                    except Exception:
+                        pass
+
+    response = HttpResponse(zip_buffer.getvalue(), content_type='application/zip')
+    response['Content-Disposition'] = 'attachment; filename="sim_ktkl_backup_full.zip"'
+    return response
