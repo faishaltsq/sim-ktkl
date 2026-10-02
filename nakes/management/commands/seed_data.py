@@ -102,6 +102,8 @@ class Command(BaseCommand):
             if created:
                 self.stdout.write(self.style.SUCCESS(f'Profesi "{nama}" ditambahkan'))
 
+        self._restore_production_data(admin_user)
+
         # Migrasi nakes berprofesi "Lainnya" ke profesi spesifik
         try:
             profesi_lainnya = Profesi.objects.get(nama='Lainnya')
@@ -289,3 +291,107 @@ class Command(BaseCommand):
             )
 
         self.stdout.write(self.style.SUCCESS('Data dummy untuk akun demo berhasil disiapkan.'))
+
+    def _restore_production_data(self, admin_user):
+        from nakes.models import Nakes, Profesi, SidangEtik
+        from datetime import datetime
+        import json
+        from pathlib import Path
+
+        real_count = Nakes.objects.exclude(created_by__username='demo').count()
+        if real_count >= 50:
+            return
+
+        fixture_path = Path(__file__).resolve().parent.parent.parent / 'fixtures' / 'production_backup.json'
+        if not fixture_path.exists():
+            return
+
+        with open(fixture_path, 'r', encoding='utf-8') as f:
+            dump = json.load(f).get('data', {})
+
+        profesi_map = {}
+        for p in dump.get('profesi', []):
+            obj, _ = Profesi.objects.get_or_create(nama=p['nama'])
+            profesi_map[str(p['id'])] = obj
+            profesi_map[int(p['id'])] = obj
+
+        def parse_d(val):
+            if not val:
+                return None
+            for fmt in ('%d-%m-%Y', '%Y-%m-%d', '%d/%m/%Y'):
+                try:
+                    return datetime.strptime(val, fmt).date()
+                except ValueError:
+                    pass
+            return None
+
+        def parse_t(val):
+            if not val:
+                return None
+            val = val.replace('.', ':')
+            for fmt in ('%H:%M:%S', '%H:%M'):
+                try:
+                    return datetime.strptime(val, fmt).time()
+                except ValueError:
+                    pass
+            return None
+
+        loaded = 0
+        for n in dump.get('nakes', []):
+            if n.get('no_str', '').startswith('DEMO-'):
+                continue
+            prof = profesi_map.get(str(n.get('profesi'))) if n.get('profesi') else None
+            if not prof:
+                continue
+            d_str = parse_d(n.get('masa_berlaku_str'))
+            d_sip = parse_d(n.get('masa_berlaku_sip'))
+            if not d_str or not d_sip:
+                continue
+            Nakes.objects.update_or_create(
+                no_str=n['no_str'],
+                defaults={
+                    'nama': n['nama'],
+                    'profesi': prof,
+                    'unit_kerja': n.get('unit_kerja', ''),
+                    'masa_berlaku_str': d_str,
+                    'no_sip': n.get('no_sip', ''),
+                    'masa_berlaku_sip': d_sip,
+                    'status_kredensial': n.get('status_kredensial', 'Belum Pengajuan'),
+                    'kewenangan_klinis': n.get('kewenangan_klinis', 'Proses'),
+                    'catatan': n.get('catatan', ''),
+                    'created_by': admin_user,
+                }
+            )
+            loaded += 1
+
+        for s in dump.get('sidang_etik', []):
+            n_obj = Nakes.objects.filter(id=s.get('nakes')).first()
+            if not n_obj:
+                target = next((x for x in dump.get('nakes', []) if x.get('id') == s.get('nakes')), None)
+                if target:
+                    n_obj = Nakes.objects.filter(no_str=target.get('no_str')).first()
+            if not n_obj or (n_obj.created_by and n_obj.created_by.username == 'demo'):
+                continue
+            t_sidang = parse_d(s.get('tanggal_sidang'))
+            w_mulai = parse_t(s.get('waktu_mulai'))
+            if not t_sidang or not w_mulai:
+                continue
+            SidangEtik.objects.update_or_create(
+                judul_sidang=s.get('judul_sidang', ''),
+                tanggal_sidang=t_sidang,
+                defaults={
+                    'nakes': n_obj,
+                    'waktu_mulai': w_mulai,
+                    'waktu_selesai': parse_t(s.get('waktu_selesai')),
+                    'tempat': s.get('tempat', ''),
+                    'perangkat_sidang': s.get('perangkat_sidang', ''),
+                    'status': s.get('status', 'Terjadwal'),
+                    'hasil_investigasi': s.get('hasil_investigasi', ''),
+                    'rekomendasi_pembinaan': s.get('rekomendasi_pembinaan', ''),
+                    'tindak_lanjut': s.get('tindak_lanjut', ''),
+                    'created_by': admin_user,
+                }
+            )
+
+        if loaded:
+            self.stdout.write(self.style.SUCCESS(f'Berhasil memulihkan {loaded} data nakes produksi dari backup!'))
