@@ -3,3 +3,5 @@ __pycache__/
 media/
 .env
 *.old
+
+.vercel
