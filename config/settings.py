@@ -12,13 +12,14 @@ SECRET_KEY = os.environ.get(
 DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1')
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
-ALLOWED_HOSTS += ['.railway.app', '.pythonanywhere.com', '.onrender.com']
+ALLOWED_HOSTS += ['.railway.app', '.pythonanywhere.com', '.onrender.com', '.vercel.app']
 
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 CSRF_TRUSTED_ORIGINS += [
     'https://*.railway.app',
     'https://*.onrender.com',
     'https://*.pythonanywhere.com',
+    'https://*.vercel.app',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
@@ -80,17 +81,32 @@ TEMPLATES = [
 WSGI_APPLICATION = 'config.wsgi.application'
 
 DATABASE_URL = os.environ.get('DATABASE_URL')
+IS_VERCEL = bool(os.environ.get('VERCEL'))
+
 if DATABASE_URL:
     DATABASES = {
         'default': dj_database_url.parse(DATABASE_URL, conn_max_age=600, ssl_require=True)
     }
 else:
+    if IS_VERCEL:
+        import shutil
+        tmp_db = Path('/tmp/db.sqlite3')
+        src_db = BASE_DIR / 'db.sqlite3'
+        if not tmp_db.exists() and src_db.exists():
+            shutil.copy2(src_db, tmp_db)
+        sqlite_name = tmp_db if tmp_db.exists() else src_db
+    else:
+        sqlite_name = BASE_DIR / 'db.sqlite3'
+
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+            'NAME': sqlite_name,
         }
     }
+
+if IS_VERCEL:
+    SESSION_ENGINE = 'django.contrib.sessions.backends.signed_cookies'
 
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
