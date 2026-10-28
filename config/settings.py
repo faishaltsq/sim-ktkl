@@ -13,6 +13,7 @@ DEBUG = os.environ.get('DJANGO_DEBUG', 'True').lower() in ('true', '1')
 
 ALLOWED_HOSTS = [h.strip() for h in os.environ.get('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',') if h.strip()]
 ALLOWED_HOSTS += ['.railway.app', '.pythonanywhere.com', '.onrender.com', '.vercel.app']
+ALLOWED_HOSTS += ['viranakes.web.id']
 
 CSRF_TRUSTED_ORIGINS = [o.strip() for o in os.environ.get('CSRF_TRUSTED_ORIGINS', '').split(',') if o.strip()]
 CSRF_TRUSTED_ORIGINS += [
@@ -20,6 +21,7 @@ CSRF_TRUSTED_ORIGINS += [
     'https://*.onrender.com',
     'https://*.pythonanywhere.com',
     'https://*.vercel.app',
+    'https://viranakes.web.id',
 ]
 
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
