@@ -22,22 +22,6 @@
             position: relative;
             overflow: hidden;
         }
-        .login-brand::before {
-            content: '';
-            position: absolute;
-            top: -50%; right: -30%;
-            width: 600px; height: 600px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.03);
-        }
-        .login-brand::after {
-            content: '';
-            position: absolute;
-            bottom: -40%; left: -20%;
-            width: 500px; height: 500px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.02);
-        }
         .login-brand > div { position: relative; z-index: 1; }
         .login-brand .brand-badge {
             display: inline-block;
@@ -213,10 +197,8 @@
 
                 <div style="margin-top:1.25rem;padding-top:1rem;border-top:1px solid #E2E8F0;text-align:center;">
                     <p style="font-size:0.78rem;color:#94A3B8;margin-bottom:0.6rem;">Ingin melihat isi sistem?</p>
-                    <form method="post" action="{% url 'accounts:login' %}">
+                    <form method="post" action="{% url 'accounts:demo_login' %}">
                         {% csrf_token %}
-                        <input type="hidden" name="username" value="demo">
-                        <input type="hidden" name="password" value="demo123">
                         {% if request.GET.next %}<input type="hidden" name="next" value="{{ request.GET.next }}">{% endif %}
                         <button type="submit" style="width:100%;padding:0.6rem;font-weight:600;font-size:0.82rem;border-radius:0.375rem;border:1.5px solid #D97706;background:#FFF8F0;color:#B45309;cursor:pointer;transition:all 0.15s;display:flex;align-items:center;justify-content:center;gap:0.5rem;">
                             <i class="bi bi-eye" style="font-size:1rem;"></i> Masuk Sebagai Demo
