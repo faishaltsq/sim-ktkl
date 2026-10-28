@@ -81,6 +81,30 @@
         </a>
     </nav>
 
+    <div class="nav-section mt-2">Sub. Kredensial</div>
+    <nav class="nav flex-column">
+        <a class="nav-link {% if request.resolver_match.namespace == 'kredensial' and request.resolver_match.url_name == 'dashboard' %}active{% endif %}" href="{% url 'kredensial:dashboard' %}">
+            <i class="bi bi-shield-check nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Dashboard Kredensial</span>
+                <span class="nav-desc">Status Pengajuan &amp; Kewenangan</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.namespace == 'kredensial' and request.resolver_match.url_name == 'application_list' or request.resolver_match.url_name == 'application_create' or request.resolver_match.url_name == 'application_detail' or request.resolver_match.url_name == 'application_update' %}active{% endif %}" href="{% url 'kredensial:application_list' %}">
+            <i class="bi bi-file-earmark-plus nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Pengajuan</span>
+                <span class="nav-desc">Kredensial &amp; Rekredensial</span>
+            </div>
+        </a>
+        <a class="nav-link {% if request.resolver_match.namespace == 'kredensial' and request.resolver_match.url_name == 'requirement_list' or request.resolver_match.url_name == 'requirement_create' or request.resolver_match.url_name == 'requirement_update' %}active{% endif %}" href="{% url 'kredensial:requirement_list' %}">
+            <i class="bi bi-list-check nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Master Kewenangan</span>
+                <span class="nav-desc">Syarat Dokumen per Profesi</span>
+            </div>
+        </a>
+    </nav>
     <div class="nav-section mt-2">Sekretariat &amp; Regulasi</div>
     <nav class="nav flex-column">
         <a class="nav-link {% if request.resolver_match.url_name == 'agenda_calendar' or request.resolver_match.url_name == 'agenda_create' or request.resolver_match.url_name == 'agenda_update' %}active{% endif %}" href="{% url 'nakes:agenda_calendar' %}">
