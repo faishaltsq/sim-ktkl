@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}SPK {{ appointment.nomor_spk }} - VIRA NAKES{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">SPK {{ appointment.nomor_spk }}</h1>
+        <p class="page-subtitle-text">{{ app.nakes.nama }}, {{ app.profesi_snapshot.nama }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'kredensial:appointment_print' app.pk %}" class="btn btn-sm btn-outline-primary" target="_blank"><i class="bi bi-printer me-1"></i>Cetak</a>
+        {% if can_issue %}
+        <a href="{% url 'kredensial:appointment_document_upload' appointment.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-upload me-1"></i>Unggah Dokumen</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold" style="font-size:0.85rem;">Detail Keputusan</span>
+                <span class="badge badge-status-{% if appointment.keputusan == 'disetujui' %}success{% elif appointment.keputusan == 'ditolak' %}danger{% else %}warning{% endif %}">{{ appointment.get_keputusan_display }}</span>
+            </div>
+            <div class="card-body py-2" style="font-size:0.82rem;">
+                <div class="row g-2">
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Nomor SPK</div>{{ appointment.nomor_spk }}</div>
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Tanggal Terbit</div>{{ appointment.tanggal_terbit|date:"d M Y" }}</div>
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Mulai Berlaku</div>{{ appointment.tanggal_mulai_berlaku|date:"d M Y" }}</div>
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Akhir Berlaku</div>{{ appointment.tanggal_akhir_berlaku|date:"d M Y" }}</div>
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Pejabat Berwenang</div>{{ appointment.pejabat_berwenang|default:appointment.nama_pejabat_eksternal }}</div>
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Lokasi Penugasan</div>{{ appointment.lokasi_penugasan|default:"-" }}</div>
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Tanggal Review</div>{{ appointment.tanggal_review|date:"d M Y"|default:"-" }}</div>
+                    <div class="col-6"><div class="text-muted" style="font-size:0.72rem;">Target Rekredensial</div>{{ appointment.target_rekredensial|date:"d M Y"|default:"-" }}</div>
+                </div>
+                {% if appointment.catatan %}
+                <div class="mt-2"><div class="text-muted" style="font-size:0.72rem;">Catatan</div>{{ appointment.catatan }}</div>
+                {% endif %}
+                {% if appointment.is_final %}
+                <div class="mt-2"><span class="badge badge-status-success"><i class="bi bi-lock me-1"></i>Final, difinalisasi {{ appointment.finalized_at|date:"d M Y H:i" }}</span></div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- DOKUMEN -->
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Dokumen Resmi</span>
+            </div>
+            <div class="card-body py-2">
+                {% if appointment.dokumen_spk %}
+                <a href="{% url 'kredensial:appointment_download' appointment.pk 'spk' %}" class="btn btn-sm btn-outline-primary mb-2"><i class="bi bi-file-earmark-pdf me-1"></i>Unduh Dokumen SPK</a>
+                {% else %}
+                <p class="text-muted mb-2" style="font-size:0.8rem;">Dokumen SPK bertandatangan belum diunggah.</p>
+                {% endif %}
+                {% if appointment.lampiran_rkk %}
+                <a href="{% url 'kredensial:appointment_download' appointment.pk 'rkk' %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-file-earmark-text me-1"></i>Unduh Lampiran RKK</a>
+                {% else %}
+                <p class="text-muted mb-0" style="font-size:0.8rem;">Lampiran RKK belum diunggah.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- KEWENANGANG DIBERIKAN -->
+    <div class="col-lg-5">
+        <div class="card">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Kewenangan yang Diberikan</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for g in granted_privileges %}
+                <li class="list-group-item px-3 py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span class="fw-bold" style="font-size:0.82rem;">{{ g.privilege.nama }}</span>
+                        <span class="badge badge-status-{% if g.status == 'active' %}success{% elif g.status == 'suspended' %}warning{% elif g.status == 'revoked' %}danger{% else %}neutral{% endif %}">{{ g.get_status_display }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size:0.75rem;">{{ g.redaksi_final|truncatechars:80 }}</div>
+                    {% if g.pembatasan %}<div style="font-size:0.75rem;"><span class="text-muted">Pembatasan:</span> {{ g.pembatasan }}</div>{% endif %}
+                    {% if g.kebutuhan_supervisi %}<div style="font-size:0.75rem;"><span class="text-muted">Supervisi:</span> {{ g.kebutuhan_supervisi }}</div>{% endif %}
+                    <div class="text-muted" style="font-size:0.72rem;">{{ g.tanggal_mulai|date:"d M Y" }}, {{ g.tanggal_akhir|date:"d M Y"|default:"-" }}</div>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada kewenangan yang diberikan.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

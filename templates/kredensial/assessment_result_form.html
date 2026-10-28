@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Hasil Asesmen - VIRA NAKES{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Tambah Hasil Asesmen</h1>
+        <p class="page-subtitle-text">{{ assessment.get_metode_display }}, {{ assessment.application.nomor_pengajuan }}</p>
+    </div>
+    <a href="{% url 'kredensial:application_detail' assessment.application_id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label fw-bold" style="font-size:0.82rem;">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="text-danger" style="font-size:0.75rem;">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Simpan Hasil</button>
+                <a href="{% url 'kredensial:application_detail' assessment.application_id %}" class="btn btn-outline-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

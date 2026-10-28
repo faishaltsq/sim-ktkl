@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+{% block title %}Sub. Kredensial - VIRA NAKES{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Sub. Kredensial</h1>
+        <p class="page-subtitle-text">Kelola proses kredensial, asesmen kompetensi, dan kewenangan klinis tenaga kesehatan.</p>
+    </div>
+    {% if can_create %}
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'kredensial:application_create' %}" class="btn btn-sm btn-primary">
+            <i class="bi bi-plus-lg me-1"></i>Pengajuan Baru
+        </a>
+    </div>
+    {% endif %}
+</div>
+
+<!-- KPI CARDS -->
+<div class="row g-3 mb-4">
+    <div class="col-6 col-lg">
+        <div class="card h-100"><div class="card-body text-center py-3">
+            <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Pengajuan Aktif</div>
+            <div class="fw-bold" style="font-size:1.6rem;color:var(--primary);">{{ total_aktif }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="card h-100"><div class="card-body text-center py-3">
+            <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Menunggu Verifikasi</div>
+            <div class="fw-bold" style="font-size:1.6rem;color:var(--warning-deep);">{{ menunggu_verifikasi }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="card h-100"><div class="card-body text-center py-3">
+            <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Menunggu Asesmen</div>
+            <div class="fw-bold" style="font-size:1.6rem;color:var(--teal);">{{ menunggu_asesmen }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="card h-100"><div class="card-body text-center py-3">
+            <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">Menunggu Keputusan</div>
+            <div class="fw-bold" style="font-size:1.6rem;color:var(--danger-deep);">{{ menunggu_keputusan }}</div>
+        </div></div>
+    </div>
+    <div class="col-6 col-lg">
+        <div class="card h-100"><div class="card-body text-center py-3">
+            <div class="text-muted" style="font-size:0.72rem;text-transform:uppercase;letter-spacing:0.05em;">SPK Mendekati Expired</div>
+            <div class="fw-bold" style="font-size:1.6rem;color:var(--danger);">{{ spk_mendekati_kedaluwarsa }}</div>
+        </div></div>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- WORKFLOW TABLE -->
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header bg-white d-flex justify-content-between align-items-center py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Pengajuan Aktif</span>
+                <a href="{% url 'kredensial:application_list' %}" class="btn btn-sm btn-outline-primary">Lihat Semua</a>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nomor</th>
+                            <th>Nakes</th>
+                            <th>Jenis</th>
+                            <th>Status</th>
+                            <th>Tanggal</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in applications %}
+                        <tr>
+                            <td><a href="{% url 'kredensial:application_detail' a.pk %}" class="fw-bold text-decoration-none" style="color:var(--text-primary);font-size:0.8rem;">{{ a.nomor_pengajuan }}</a></td>
+                            <td style="font-size:0.8rem;">{{ a.nakes.nama }}</td>
+                            <td><span class="badge badge-status-info">{{ a.get_jenis_display }}</span></td>
+                            <td><span class="badge badge-status-neutral">{{ a.get_workflow_state_display }}</span></td>
+                            <td style="font-size:0.78rem;color:var(--text-secondary);">{{ a.tanggal_pengajuan|date:"d M Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-4">Belum ada pengajuan aktif.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SIDEBAR WIDGETS -->
+    <div class="col-lg-4">
+        <!-- PRIORITY ACTIONS -->
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Aksi Prioritas</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% if overdue_followups %}
+                {% for f in overdue_followups %}
+                <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                    <div>
+                        <div style="font-size:0.8rem;font-weight:600;">{{ f.application.nakes.nama }}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">{{ f.temuan|truncatechars:50 }}</div>
+                    </div>
+                    <span class="badge badge-status-danger">Terlambat</span>
+                </li>
+                {% endfor %}
+                {% else %}
+                <li class="list-group-item text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada tindak lanjut terlambat.</li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- RECENT DECISIONS -->
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Keputusan Terbaru</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for d in recent_decisions %}
+                <li class="list-group-item px-3 py-2">
+                    <div class="d-flex justify-content-between">
+                        <span style="font-size:0.8rem;font-weight:600;">{{ d.application.nakes.nama }}</span>
+                        <span class="badge badge-status-success">{{ d.get_keputusan_display }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size:0.72rem;">SPK {{ d.nomor_spk }}, {{ d.tanggal_keputusan|date:"d M Y" }}</div>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted py-3" style="font-size:0.8rem;">Belum ada keputusan.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- UPCOMING RECREDENTIALING -->
+        <div class="card">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Rekredensial Mendatang</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for r in upcoming_recredential %}
+                <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                    <div>
+                        <div style="font-size:0.8rem;font-weight:600;">{{ r.application.nakes.nama }}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">Target: {{ r.target_rekredensial|date:"d M Y" }}</div>
+                    </div>
+                    {% if r.sisa_hari is not None and r.sisa_hari <= 90 %}
+                    <span class="badge badge-status-warning">{{ r.sisa_hari }}h</span>
+                    {% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada jadwal rekredensial.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

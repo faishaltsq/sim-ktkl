@@ -1,0 +1,172 @@
+{% extends "base.html" %}
+{% block title %}Monitoring & Rekredensial - VIRA NAKES{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Monitoring &amp; Rekredensial</h1>
+        <p class="page-subtitle-text">Pantau SPK aktif, kedaluwarsa, tindak lanjut, dan jadwal rekredensial.</p>
+    </div>
+</div>
+
+<!-- FILTERS -->
+<div class="card mb-3">
+    <div class="card-body py-2 px-3">
+        <form method="get" class="d-flex gap-2 align-items-center flex-wrap">
+            <select name="profesi" class="form-select form-select-sm" style="width:auto;">
+                <option value="">Semua Profesi</option>
+                {% for p in profesi_list %}
+                <option value="{{ p.pk }}" {% if profesi_filter == p.pk|stringformat:"i" %}selected{% endif %}>{{ p.nama }}</option>
+                {% endfor %}
+            </select>
+            <input type="text" name="unit" value="{{ unit_filter }}" class="form-control form-control-sm" style="width:200px;" placeholder="Unit kerja...">
+            <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-funnel me-1"></i>Filter</button>
+        </form>
+    </div>
+</div>
+
+<div class="row g-3">
+    <!-- SPK AKTIF -->
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold" style="font-size:0.85rem;">SPK Aktif</span>
+                <span class="badge badge-status-success">{{ spk_aktif|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Nakes</th><th>SPK</th><th>Berlaku s/d</th><th>Sisa</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in spk_aktif %}
+                        <tr>
+                            <td style="font-size:0.8rem;">{{ a.application.nakes.nama }}</td>
+                            <td><code style="font-size:0.72rem;">{{ a.nomor_spk }}</code></td>
+                            <td style="font-size:0.78rem;">{{ a.tanggal_akhir_berlaku|date:"d M Y" }}</td>
+                            <td>{% if a.sisa_hari <= 90 %}<span class="badge badge-status-warning">{{ a.sisa_hari }}h</span>{% else %}<span class="badge badge-status-success">{{ a.sisa_hari }}h</span>{% endif %}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada SPK aktif.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SPK KEDALUWARSA -->
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
+                <span class="fw-bold" style="font-size:0.85rem;">SPK Kedaluwarsa</span>
+                <span class="badge badge-status-danger">{{ spk_kedaluwarsa|length }}</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Nakes</th><th>SPK</th><th>Berakhir</th><th>Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in spk_kedaluwarsa %}
+                        <tr>
+                            <td style="font-size:0.8rem;">{{ a.application.nakes.nama }}</td>
+                            <td><code style="font-size:0.72rem;">{{ a.nomor_spk }}</code></td>
+                            <td style="font-size:0.78rem;">{{ a.tanggal_akhir_berlaku|date:"d M Y" }}</td>
+                            <td>
+                                <a href="{% url 'kredensial:recredential_create' a.application_id %}" class="btn btn-sm btn-outline-primary">Rekredensial</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada SPK kedaluwarsa.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- SUPERVISI AKTIF -->
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Kewenangan dengan Supervisi Aktif</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for g in supervisi_aktif %}
+                <li class="list-group-item px-3 py-2">
+                    <div class="d-flex justify-content-between">
+                        <span style="font-size:0.8rem;font-weight:600;">{{ g.appointment.application.nakes.nama }}</span>
+                        <span class="badge badge-status-info">{{ g.privilege.nama }}</span>
+                    </div>
+                    <div class="text-muted" style="font-size:0.75rem;">{{ g.kebutuhan_supervisi|truncatechars:60 }}</div>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada kewenangan bersupervisi.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+
+    <!-- FOLLOW-UP -->
+    <div class="col-lg-6">
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Tindak Lanjut</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Nakes</th><th>Temuan</th><th>Target</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for f in followups %}
+                        <tr>
+                            <td style="font-size:0.8rem;">{{ f.application.nakes.nama }}</td>
+                            <td style="font-size:0.78rem;">{{ f.temuan|truncatechars:40 }}</td>
+                            <td style="font-size:0.78rem;">{{ f.tanggal_target|date:"d M Y"|default:"—" }}</td>
+                            <td>
+                                {% if f.is_overdue %}<span class="badge badge-status-danger">Terlambat</span>
+                                {% else %}<span class="badge badge-status-neutral">{{ f.get_status_display }}</span>{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada tindak lanjut.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- REKREDENSIAL DUE -->
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Rekredensial Jatuh Tempo</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Nakes</th><th>Profesi</th><th>SPK</th><th>Target Rekredensial</th><th class="text-end">Aksi</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in rekredensial_due %}
+                        <tr>
+                            <td style="font-size:0.8rem;">{{ a.application.nakes.nama }}</td>
+                            <td><span class="badge badge-status-info">{{ a.application.profesi_snapshot.nama }}</span></td>
+                            <td><code style="font-size:0.72rem;">{{ a.nomor_spk }}</code></td>
+                            <td style="font-size:0.78rem;">{{ a.target_rekredensial|date:"d M Y" }}</td>
+                            <td class="text-end">
+                                <a href="{% url 'kredensial:recredential_create' a.application_id %}" class="btn btn-sm btn-outline-primary">Buat Siklus Baru</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada rekredensial jatuh tempo.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

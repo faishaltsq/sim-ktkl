@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}Cetak SPK {{ appointment.nomor_spk }}{% endblock %}
+{% block extra_css %}
+<style>
+    @media print {
+        .no-print { display: none !important; }
+        .main-content { margin-left: 0 !important; }
+        .sidebar-desktop { display: none !important; }
+        body { background: #fff; font-size: 12pt; }
+        .print-page { max-width: 100%; padding: 0; }
+        .card { border: none !important; box-shadow: none !important; }
+    }
+    .print-page { max-width: 800px; margin: 0 auto; padding: 2rem; }
+    .doc-header { text-align: center; border-bottom: 3px double #0F172A; padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .doc-header h4 { font-weight: 800; margin: 0; }
+    .doc-header p { margin: 0; font-size: 0.85rem; }
+    .doc-title { text-align: center; margin: 1.5rem 0; }
+    .doc-title h5 { font-weight: 800; text-decoration: underline; }
+    .doc-table { width: 100%; margin-bottom: 1rem; }
+    .doc-table td { padding: 0.3rem 0.5rem; vertical-align: top; font-size: 0.88rem; }
+    .doc-table td:first-child { width: 200px; font-weight: 600; }
+    .doc-footer { margin-top: 3rem; display: flex; justify-content: flex-end; }
+    .doc-sign { text-align: center; min-width: 260px; }
+    .doc-sign .name { font-weight: 700; text-decoration: underline; margin-top: 4rem; }
+</style>
+{% endblock %}
+{% block content %}
+<div class="print-page">
+    <div class="no-print mb-3">
+        <a href="{% url 'kredensial:appointment_detail' appointment.application_id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
+        <button onclick="window.print()" class="btn btn-sm btn-primary"><i class="bi bi-printer me-1"></i>Cetak</button>
+    </div>
+
+    <div class="doc-header">
+        <h4>SURAT PENUGASAN KLINIS (SPK)</h4>
+        <p>RS PKU Muhammadiyah Gombong, Sub. Komite Kredensial Tenaga Kesehatan Lainnya</p>
+    </div>
+
+    <div class="doc-title">
+        <h5>SURAT PENUGASAN KLINIS</h5>
+        <p style="font-size:0.85rem;">Nomor: {{ appointment.nomor_spk }}</p>
+    </div>
+
+    <table class="doc-table">
+        <tr>
+            <td>Nama Tenaga Kesehatan</td>
+            <td>: {{ appointment.application.nakes.nama }}</td>
+        </tr>
+        <tr>
+            <td>Profesi</td>
+            <td>: {{ appointment.application.profesi_snapshot.nama }}</td>
+        </tr>
+        <tr>
+            <td>Unit Kerja</td>
+            <td>: {{ appointment.application.unit_kerja_snapshot }}</td>
+        </tr>
+        <tr>
+            <td>Lokasi Penugasan</td>
+            <td>: {{ appointment.lokasi_penugasan|default:"-" }}</td>
+        </tr>
+        <tr>
+            <td>Tanggal Terbit</td>
+            <td>: {{ appointment.tanggal_terbit|date:"d F Y" }}</td>
+        </tr>
+        <tr>
+            <td>Masa Berlaku</td>
+            <td>: {{ appointment.tanggal_mulai_berlaku|date:"d F Y" }} s/d {{ appointment.tanggal_akhir_berlaku|date:"d F Y" }}</td>
+        </tr>
+        <tr>
+            <td>Keputusan</td>
+            <td>: {{ appointment.get_keputusan_display }}</td>
+        </tr>
+    </table>
+
+    <p style="font-size:0.88rem;font-weight:600;">Rincian Kewenangan Klinis (RKK):</p>
+    <table class="table table-bordered table-sm">
+        <thead>
+            <tr>
+                <th style="width:40px;">No</th>
+                <th>Kewenangan</th>
+                <th>Pembatasan</th>
+                <th>Supervisi</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for g in granted_privileges %}
+            <tr>
+                <td>{{ forloop.counter }}</td>
+                <td>{{ g.redaksi_final }}</td>
+                <td>{{ g.pembatasan|default:"-" }}</td>
+                <td>{{ g.kebutuhan_supervisi|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="4" class="text-center text-muted">Tidak ada kewenangan yang diberikan.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    {% if appointment.catatan %}
+    <p style="font-size:0.88rem;"><strong>Catatan:</strong> {{ appointment.catatan }}</p>
+    {% endif %}
+
+    <div class="doc-footer">
+        <div class="doc-sign">
+            <p style="font-size:0.85rem;margin:0;">Gombong, {{ appointment.tanggal_terbit|date:"d F Y" }}</p>
+            <p style="font-size:0.85rem;margin:0;">Pejabat Berwenang,</p>
+            <div class="name">{{ appointment.pejabat_berwenang|default:appointment.nama_pejabat_eksternal }}</div>
+        </div>
+    </div>
+</div>
+{% endblock %}

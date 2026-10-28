@@ -323,7 +323,7 @@ class ClinicalAppointment(models.Model):
     dokumen_spk = models.FileField('Dokumen SPK (PDF)', upload_to='kredensial/spk/%Y/', blank=True)
     lampiran_rkk = models.FileField('Lampiran RKK', upload_to='kredensial/rkk/%Y/', blank=True)
     is_final = models.BooleanField('Final / Terbit', default=False,
-                                   help_text='True setelah keputusan difinalisasi — tidak bisa diubah tanpa proses amendment.')
+                                   help_text='True setelah keputusan difinalisasi, tidak bisa diubah tanpa proses amendment.')
     finalized_at = models.DateTimeField('Waktu Finalisasi', null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
