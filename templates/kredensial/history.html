@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Riwayat Kredensial - {{ nakes.nama }}{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Rekam Jejak Kredensial</h1>
+        <p class="page-subtitle-text">{{ nakes.nama }} — {{ nakes.profesi.nama }} — {{ nakes.unit_kerja }}</p>
+    </div>
+    <div class="d-flex gap-2 flex-wrap">
+        <a href="{% url 'nakes:detail' nakes.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-person me-1"></i>Detail Nakes</a>
+        {% if can_create %}
+        <a href="{% url 'kredensial:application_create' %}?nakes={{ nakes.pk }}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Pengajuan Baru</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row g-3">
+    <div class="col-lg-7">
+        <!-- SIKLUS PENGAJUAN -->
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Siklus Pengajuan</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Nomor</th><th>Jenis</th><th>Tanggal</th><th>Status</th><th>Siklus Sebelumnya</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in applications %}
+                        <tr>
+                            <td><a href="{% url 'kredensial:application_detail' a.pk %}" class="fw-bold text-decoration-none" style="font-size:0.78rem;color:var(--text-primary);">{{ a.nomor_pengajuan }}</a></td>
+                            <td style="font-size:0.78rem;">{{ a.get_jenis_display }}</td>
+                            <td style="font-size:0.78rem;">{{ a.tanggal_pengajuan|date:"d M Y" }}</td>
+                            <td><span class="badge badge-status-neutral">{{ a.get_workflow_state_display }}</span></td>
+                            <td style="font-size:0.75rem;">
+                                {% if a.previous_cycle %}<a href="{% url 'kredensial:application_detail' a.previous_cycle_id %}">{{ a.previous_cycle.nomor_pengajuan }}</a>{% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="text-center text-muted py-3" style="font-size:0.8rem;">Belum ada pengajuan kredensial.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- KEPUTUSAN SPK -->
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Keputusan SPK</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Nomor SPK</th><th>Keputusan</th><th>Terbit</th><th>Berlaku</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for a in appointments %}
+                        <tr>
+                            <td><a href="{% url 'kredensial:appointment_detail' a.application_id %}" class="text-decoration-none fw-bold" style="font-size:0.78rem;">{{ a.nomor_spk }}</a></td>
+                            <td><span class="badge badge-status-{% if a.keputusan == 'disetujui' %}success{% elif a.keputusan == 'ditolak' %}danger{% else %}warning{% endif %}">{{ a.get_keputusan_display }}</span></td>
+                            <td style="font-size:0.78rem;">{{ a.tanggal_terbit|date:"d M Y" }}</td>
+                            <td style="font-size:0.78rem;">{{ a.tanggal_mulai_berlaku|date:"d M Y" }} — {{ a.tanggal_akhir_berlaku|date:"d M Y" }}</td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3" style="font-size:0.8rem;">Belum ada keputusan SPK.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RIWAYAT KEWENANGANG -->
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Riwayat Kewenangan</span>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                    <thead>
+                        <tr><th>Kewenangan</th><th>SPK</th><th>Berlaku</th><th>Status</th></tr>
+                    </thead>
+                    <tbody>
+                        {% for g in granted_history %}
+                        <tr>
+                            <td style="font-size:0.8rem;">{{ g.privilege.nama }}</td>
+                            <td><code style="font-size:0.72rem;">{{ g.appointment.nomor_spk }}</code></td>
+                            <td style="font-size:0.78rem;">{{ g.tanggal_mulai|date:"d M Y" }} — {{ g.tanggal_akhir|date:"d M Y"|default:"—" }}</td>
+                            <td><span class="badge badge-status-{% if g.status == 'active' %}success{% elif g.status == 'suspended' %}warning{% elif g.status == 'revoked' %}danger{% else %}neutral{% endif %}">{{ g.get_status_display }}</span></td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="4" class="text-center text-muted py-3" style="font-size:0.8rem;">Belum ada kewenangan yang diberikan.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <!-- OPPE -->
+        <div class="card mb-3">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Evaluasi OPPE</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for o in oppe_list %}
+                <li class="list-group-item d-flex justify-content-between align-items-center px-3 py-2">
+                    <div>
+                        <div style="font-size:0.8rem;font-weight:600;">OPPE {{ o.tahun }}</div>
+                        <div class="text-muted" style="font-size:0.72rem;">{{ o.tanggal_evaluasi|date:"d M Y" }} · Poin {{ o.poin_penilaian }}</div>
+                    </div>
+                    <span class="badge badge-status-{% if o.grade == 'B' %}success{% elif o.grade == 'C' %}warning{% else %}danger{% endif %}">{{ o.grade_display }}</span>
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted py-3" style="font-size:0.8rem;">Belum ada evaluasi OPPE.</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <!-- FOLLOW-UP -->
+        <div class="card">
+            <div class="card-header bg-white py-2">
+                <span class="fw-bold" style="font-size:0.85rem;">Tindak Lanjut</span>
+            </div>
+            <ul class="list-group list-group-flush">
+                {% for f in followups %}
+                <li class="list-group-item px-3 py-2">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <span style="font-size:0.8rem;font-weight:600;">{{ f.temuan|truncatechars:50 }}</span>
+                        {% if f.is_overdue %}<span class="badge badge-status-danger">Terlambat</span>
+                        {% else %}<span class="badge badge-status-neutral">{{ f.get_status_display }}</span>{% endif %}
+                    </div>
+                    {% if f.oppe_terkait %}<div class="text-muted" style="font-size:0.72rem;">OPPE {{ f.oppe_terkait.tahun }}</div>{% endif %}
+                    {% if f.rekomendasi_tindakan %}<div style="font-size:0.75rem;">{{ f.rekomendasi_tindakan|truncatechars:60 }}</div>{% endif %}
+                </li>
+                {% empty %}
+                <li class="list-group-item text-center text-muted py-3" style="font-size:0.8rem;">Tidak ada tindak lanjut.</li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -40,6 +40,7 @@ from .forms import (
     CredentialReviewForm,
     ClinicalAppointmentForm,
     AppointmentDocumentForm,
+    CredentialFollowUpForm,
 )
 from .services import workflow
 from .services import appointment as appointment_service
@@ -660,4 +661,181 @@ def appointment_print(request, pk):
     granted = appointment.granted_privileges.select_related('privilege')
     return render(request, 'kredensial/appointment_print.html', {
         'appointment': appointment, 'granted_privileges': granted,
+    })
+
+
+# ==========================================
+# MONITORING & REKAM JEJAK
+# ==========================================
+@login_required
+@kredensial_role_required('monitor')
+def monitoring_dashboard(request):
+    """Dashboard monitoring — SPK aktif, kedaluwarsa, follow-up, rekredensial."""
+    today = timezone.now().date()
+    appointments = ClinicalAppointment.objects.filter(is_final=True).select_related(
+        'application__nakes', 'application__profesi_snapshot',
+    )
+
+    aktif = appointments.filter(
+        keputusan__in=['disetujui', 'disetujui_pembatasan'],
+        tanggal_mulai_berlaku__lte=today,
+        tanggal_akhir_berlaku__gte=today,
+    )
+    mendekati = appointments.filter(
+        keputusan__in=['disetujui', 'disetujui_pembatasan'],
+        tanggal_akhir_berlaku__gte=today,
+        tanggal_akhir_berlaku__lte=today + timezone.timedelta(days=90),
+    )
+    kedaluwarsa = appointments.filter(
+        keputusan__in=['disetujui', 'disetujui_pembatasan'],
+        tanggal_akhir_berlaku__lt=today,
+    )
+    rekredensial_due = appointments.filter(
+        target_rekredensial__isnull=False, target_rekredensial__lte=today,
+    )
+    followups = CredentialFollowUp.objects.select_related(
+        'application__nakes', 'oppe_terkait',
+    ).order_by('tanggal_target')
+
+    # Filters
+    profesi = request.GET.get('profesi', '')
+    if profesi:
+        aktif = aktif.filter(application__profesi_snapshot_id=profesi)
+        mendekati = mendekati.filter(application__profesi_snapshot_id=profesi)
+        kedaluwarsa = kedaluwarsa.filter(application__profesi_snapshot_id=profesi)
+    unit = request.GET.get('unit', '')
+    if unit:
+        aktif = aktif.filter(application__unit_kerja_snapshot__icontains=unit)
+        mendekati = mendekati.filter(application__unit_kerja_snapshot__icontains=unit)
+        kedaluwarsa = kedaluwarsa.filter(application__unit_kerja_snapshot__icontains=unit)
+
+    context = {
+        'spk_aktif': aktif,
+        'spk_mendekati': mendekati,
+        'spk_kedaluwarsa': kedaluwarsa,
+        'rekredensial_due': rekredensial_due,
+        'followups': followups,
+        'supervisi_aktif': GrantedPrivilege.objects.filter(
+            status='active', kebutuhan_supervisi__isnull=False,
+        ).exclude(kebutuhan_supervisi='').select_related(
+            'appointment__application__nakes', 'privilege',
+        ),
+        'profesi_list': Profesi.objects.all(),
+        'profesi_filter': profesi,
+        'unit_filter': unit,
+        'today': today,
+    }
+    return render(request, 'kredensial/monitoring.html', context)
+
+
+@login_required
+@kredensial_role_required('monitor')
+def credential_history(request, nakes_pk):
+    """Rekam jejak kredensial lengkap untuk satu nakes."""
+    nakes = get_object_or_404(Nakes, pk=nakes_pk)
+    applications = CredentialApplication.objects.filter(
+        nakes=nakes,
+    ).select_related('profesi_snapshot', 'previous_cycle').order_by('-tanggal_pengajuan')
+
+    appointments = ClinicalAppointment.objects.filter(
+        application__nakes=nakes, is_final=True,
+    ).select_related('application').order_by('-tanggal_terbit')
+
+    granted_history = GrantedPrivilege.objects.filter(
+        appointment__application__nakes=nakes,
+    ).select_related('privilege', 'appointment').order_by('-tanggal_mulai')
+
+    oppe_list = EvaluasiOPPE.objects.filter(nakes=nakes).order_by('-tahun')
+
+    followups = CredentialFollowUp.objects.filter(
+        application__nakes=nakes,
+    ).select_related('oppe_terkait').order_by('-created_at')
+
+    context = {
+        'nakes': nakes,
+        'applications': applications,
+        'appointments': appointments,
+        'granted_history': granted_history,
+        'oppe_list': oppe_list,
+        'followups': followups,
+        'can_create': user_can(request.user, 'create_application'),
+    }
+    return render(request, 'kredensial/history.html', context)
+
+
+# ==========================================
+# FOLLOW-UP
+# ==========================================
+@login_required
+@kredensial_role_required('monitor')
+def followup_create(request, pk):
+    app = get_object_or_404(CredentialApplication, pk=pk)
+    if request.method == 'POST':
+        form = CredentialFollowUpForm(request.POST, application=app)
+        if form.is_valid():
+            f = form.save(commit=False)
+            f.application = app
+            f.save()
+            messages.success(request, 'Tindak lanjut berhasil dicatat.')
+            return redirect('kredensial:application_detail', pk=app.pk)
+    else:
+        form = CredentialFollowUpForm(application=app)
+    return render(request, 'kredensial/followup_form.html', {'form': form, 'app': app})
+
+
+@login_required
+@kredensial_role_required('monitor')
+def followup_update(request, pk):
+    f = get_object_or_404(CredentialFollowUp, pk=pk)
+    if request.method == 'POST':
+        form = CredentialFollowUpForm(request.POST, instance=f, application=f.application)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Tindak lanjut berhasil diperbarui.')
+            return redirect('kredensial:application_detail', pk=f.application_id)
+    else:
+        form = CredentialFollowUpForm(instance=f, application=f.application)
+    return render(request, 'kredensial/followup_form.html', {
+        'form': form, 'app': f.application,
+    })
+
+
+# ==========================================
+# REKREDENSIAL
+# ==========================================
+@login_required
+@kredensial_role_required('create_application')
+def recredential_create(request, pk):
+    """Buat siklus rekredensial baru dari pengajuan sebelumnya."""
+    previous = get_object_or_404(CredentialApplication, pk=pk)
+    if request.method == 'POST':
+        form = CredentialApplicationForm(request.POST)
+        if form.is_valid():
+            with transaction.atomic():
+                app = form.save(commit=False)
+                app.diajukan_oleh = request.user
+                app.profesi_snapshot = app.nakes.profesi
+                app.unit_kerja_snapshot = app.nakes.unit_kerja
+                app.previous_cycle = previous
+                app.nomor_pengajuan = _generate_nomor(app)
+                app.save()
+                CredentialEvent.objects.create(
+                    application=app, dari_state='', ke_state='DRAFT',
+                    aksi='recredential_create', aktor=request.user,
+                    catatan=f'Siklus rekredensial dari {previous.nomor_pengajuan}.',
+                )
+            messages.success(
+                request,
+                f'Siklus rekredensial {app.nomor_pengajuan} dibuat dari {previous.nomor_pengajuan}.',
+            )
+            return redirect('kredensial:application_detail', pk=app.pk)
+    else:
+        form = CredentialApplicationForm(initial={
+            'nakes': previous.nakes_id,
+            'jenis': 'berkala',
+            'previous_cycle': previous.pk,
+            'lingkup_kewenangan_diminta': previous.lingkup_kewenangan_diminta,
+        })
+    return render(request, 'kredensial/application_form.html', {
+        'form': form, 'mode': 'create', 'previous': previous,
     })

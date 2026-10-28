@@ -12,6 +12,11 @@
         {% endif %}
         {% if can_create %}
         <a href="{% url 'kredensial:document_upload' app.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-upload me-1"></i>Upload Dokumen</a>
+        <a href="{% url 'kredensial:followup_create' app.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-clipboard-plus me-1"></i>Tindak Lanjut</a>
+        {% endif %}
+        <a href="{% url 'kredensial:history' app.nakes_id %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-clock-history me-1"></i>Riwayat</a>
+        {% if app.workflow_state == 'CLOSED' and can_create %}
+        <a href="{% url 'kredensial:recredential_create' app.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-repeat me-1"></i>Rekredensial</a>
         {% endif %}
     </div>
 </div>

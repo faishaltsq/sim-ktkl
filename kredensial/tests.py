@@ -6,12 +6,13 @@ from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 
-from nakes.models import Nakes, Profesi
+from nakes.models import Nakes, Profesi, EvaluasiOPPE
 from kredensial.models import (
     CredentialRequirement, CredentialApplication, CredentialDocument,
     DocumentVerification, ClinicalPrivilege, RequestedPrivilege,
     CompetencyAssessment, PrivilegeRecommendation, CredentialReview,
     GrantedPrivilege, ClinicalAppointment, CredentialEvent,
+    CredentialFollowUp,
 )
 from kredensial.permissions import ROLE_GROUPS, user_can, user_can_transition
 from kredensial.services import appointment as appointment_service
@@ -419,3 +420,129 @@ class KredensialAppointmentTest(TestCase):
         c.login(username='demo', password='x')
         resp = c.get(reverse('kredensial:appointment_download', args=[appt.pk, 'spk']))
         self.assertEqual(resp.status_code, 403)
+
+
+class KredensialMonitoringTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username='monitor', password='x')
+        make_group('auditor')
+        self.user.groups.add(Group.objects.get(name=ROLE_GROUPS['auditor']))
+        self.pejabat = User.objects.create_user(username='pejabat2', password='x')
+        make_group('pejabat')
+        self.pejabat.groups.add(Group.objects.get(name=ROLE_GROUPS['pejabat']))
+        self.client.login(username='monitor', password='x')
+
+        self.profesi, _ = Profesi.objects.get_or_create(nama='Apoteker')
+        self.nakes = Nakes.objects.create(
+            nama='Rina Kusuma', profesi=self.profesi, unit_kerja='Farmasi',
+            no_str='STR-MON-1', masa_berlaku_str='2027-01-01',
+            no_sip='SIP-MON-1', masa_berlaku_sip='2027-01-01',
+            created_by=self.user,
+        )
+        self.app = CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-MON-001', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Farmasi',
+            jenis='awal', diajukan_oleh=self.user, workflow_state='CLOSED',
+            status='Selesai',
+        )
+        self.privilege = ClinicalPrivilege.objects.create(
+            kode='FAR-01', profesi=self.profesi, nama='Dispensing Obat',
+        )
+        self.rp = RequestedPrivilege.objects.create(
+            application=self.app, privilege=self.privilege,
+        )
+        PrivilegeRecommendation.objects.create(
+            requested_privilege=self.rp, keputusan='direkomendasikan',
+            direkomendasikan_oleh=self.user,
+        )
+
+    def _finalize(self, nomor='SPK-MON-001', end='2027-12-31', target=None):
+        return appointment_service.finalize_appointment(
+            self.app,
+            {
+                'nomor_spk': nomor, 'tanggal_terbit': '2026-01-01',
+                'tanggal_mulai_berlaku': '2026-01-01',
+                'tanggal_akhir_berlaku': end, 'keputusan': 'disetujui',
+                'target_rekredensial': target,
+            },
+            [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+            self.pejabat,
+        )
+
+    def test_monitoring_dashboard(self):
+        self._finalize()
+        resp = self.client.get(reverse('kredensial:monitoring'))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'SPK-MON-001')
+
+    def test_expiration_detection(self):
+        self._finalize(nomor='SPK-EXP', end='2026-06-30')
+        resp = self.client.get(reverse('kredensial:monitoring'))
+        self.assertContains(resp, 'SPK-EXP')
+        appt = ClinicalAppointment.objects.get(nomor_spk='SPK-EXP')
+        self.assertTrue(appt.is_expired)
+
+    def test_credential_history(self):
+        self._finalize()
+        resp = self.client.get(reverse('kredensial:history', args=[self.nakes.pk]))
+        self.assertEqual(resp.status_code, 200)
+        self.assertContains(resp, 'Rina Kusuma')
+        self.assertContains(resp, 'Dispensing Obat')
+
+    def test_followup_create_and_overdue(self):
+        resp = self.client.post(reverse('kredensial:followup_create', args=[self.app.pk]), {
+            'temuan': 'Keterlambatan input resep',
+            'rekomendasi_tindakan': 'Pelatihan ulang',
+            'penanggung_jawab': 'Apoteker Senior',
+            'tanggal_target': '2026-01-15',
+            'status': 'belum',
+        })
+        self.assertEqual(resp.status_code, 302)
+        f = CredentialFollowUp.objects.get(application=self.app)
+        self.assertTrue(f.is_overdue)
+
+    def test_recredential_creates_new_cycle(self):
+        self._finalize(nomor='SPK-REKRED')
+        sek = User.objects.create_user(username='sek3', password='x')
+        make_group('sekretariat')
+        sek.groups.add(Group.objects.get(name=ROLE_GROUPS['sekretariat']))
+        c = Client()
+        c.login(username='sek3', password='x')
+        resp = c.post(reverse('kredensial:recredential_create', args=[self.app.pk]), {
+            'nakes': self.nakes.pk,
+            'jenis': 'berkala',
+            'tanggal_pengajuan': '2026-10-28',
+            'previous_cycle': self.app.pk,
+        })
+        self.assertEqual(resp.status_code, 302)
+        new_app = CredentialApplication.objects.get(previous_cycle=self.app)
+        self.assertEqual(new_app.jenis, 'berkala')
+        self.assertNotEqual(new_app.pk, self.app.pk)
+        # Siklus lama tetap utuh
+        self.app.refresh_from_db()
+        self.assertEqual(self.app.workflow_state, 'CLOSED')
+        self.assertTrue(ClinicalAppointment.objects.filter(application=self.app).exists())
+
+    def test_oppe_link_in_followup(self):
+        oppe = EvaluasiOPPE.objects.create(
+            nakes=self.nakes, tahun=2026, tanggal_evaluasi='2026-06-01',
+            created_by=self.user,
+        )
+        resp = self.client.post(reverse('kredensial:followup_create', args=[self.app.pk]), {
+            'temuan': 'OPPE grade K', 'oppe_terkait': oppe.pk,
+            'status': 'proses',
+        })
+        self.assertEqual(resp.status_code, 302)
+        f = CredentialFollowUp.objects.get(application=self.app)
+        self.assertEqual(f.oppe_terkait, oppe)
+
+    def test_history_preserves_superseded_decisions(self):
+        appt1 = self._finalize(nomor='SPK-OLD', end='2026-12-31')
+        # Ubah status granted → superseded (keputusan lama tetap tercatat)
+        granted = appt1.granted_privileges.first()
+        appointment_service.change_granted_status(
+            granted, 'superseded', self.user, 'Digantikan SPK baru',
+        )
+        resp = self.client.get(reverse('kredensial:history', args=[self.nakes.pk]))
+        self.assertContains(resp, 'SPK-OLD')
+        self.assertContains(resp, 'Digantikan')

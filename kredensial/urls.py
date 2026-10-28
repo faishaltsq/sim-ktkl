@@ -47,4 +47,15 @@ urlpatterns = [
     path('spk/<int:pk>/dokumen/', views.appointment_document_upload, name='appointment_document_upload'),
     path('spk/<int:pk>/unduh/<str:doc_type>/', views.appointment_download, name='appointment_download'),
     path('spk/<int:pk>/cetak/', views.appointment_print, name='appointment_print'),
+
+    # Monitoring & rekam jejak
+    path('monitoring/', views.monitoring_dashboard, name='monitoring'),
+    path('riwayat/<int:nakes_pk>/', views.credential_history, name='history'),
+
+    # Follow-up
+    path('pengajuan/<int:pk>/tindak-lanjut/tambah/', views.followup_create, name='followup_create'),
+    path('tindak-lanjut/<int:pk>/edit/', views.followup_update, name='followup_update'),
+
+    # Rekredensial
+    path('pengajuan/<int:pk>/rekredensial/', views.recredential_create, name='recredential_create'),
 ]

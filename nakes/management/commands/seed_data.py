@@ -96,6 +96,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS('User demo dibuat/diperbarui (password: demo123)'))
 
         self._seed_demo_records(demo_user)
+        self._seed_kredensial_groups()
 
         for nama in DEFAULT_PROFESI:
             _, created = Profesi.objects.get_or_create(nama=nama)
@@ -162,6 +163,15 @@ class Command(BaseCommand):
             self.stdout.write(self.style.SUCCESS(f'Berhasil menghapus {deleted_count} data nakes dummy'))
 
         self.stdout.write(self.style.SUCCESS('Seed selesai.'))
+
+    def _seed_kredensial_groups(self):
+        """Buat group role untuk modul Sub. Kredensial (idempoten)."""
+        from django.contrib.auth.models import Group
+        from kredensial.permissions import ROLE_GROUPS
+        for role, group_name in ROLE_GROUPS.items():
+            _, created = Group.objects.get_or_create(name=group_name)
+            if created:
+                self.stdout.write(self.style.SUCCESS(f'Group kredensial "{group_name}" dibuat'))
 
     def _seed_demo_records(self, demo_user):
         from datetime import date, timedelta

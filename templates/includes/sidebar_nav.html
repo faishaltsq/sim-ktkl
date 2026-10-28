@@ -104,6 +104,13 @@
                 <span class="nav-desc">Syarat Dokumen per Profesi</span>
             </div>
         </a>
+        <a class="nav-link {% if request.resolver_match.namespace == 'kredensial' and request.resolver_match.url_name == 'monitoring' or request.resolver_match.url_name == 'history' %}active{% endif %}" href="{% url 'kredensial:monitoring' %}">
+            <i class="bi bi-graph-up nav-icon"></i>
+            <div class="nav-text">
+                <span class="nav-title">Monitoring &amp; Rekredensial</span>
+                <span class="nav-desc">SPK, Tindak Lanjut &amp; Riwayat</span>
+            </div>
+        </a>
     </nav>
     <div class="nav-section mt-2">Sekretariat &amp; Regulasi</div>
     <nav class="nav flex-column">
