@@ -138,6 +138,10 @@ def finalize_appointment(application, appointment_data, granted_selections, acto
             catatan=f"SPK {appointment.nomor_spk} difinalisasi ({appointment.get_keputusan_display()}).",
         )
 
+    # Sinkronkan ringkasan Nakes (di luar atomic — read-only terhadap appointment)
+    from .summary_sync import sync_nakes
+    sync_nakes(application.nakes)
+
     return appointment
 
 
@@ -179,4 +183,9 @@ def change_granted_status(granted_privilege, new_status, actor, catatan=''):
         aktor=actor,
         catatan=catatan or f'{granted_privilege.privilege.nama}: {old} → {new_status}',
     )
+
+    # Sinkronkan ringkasan Nakes
+    from .summary_sync import sync_nakes
+    sync_nakes(granted_privilege.appointment.application.nakes)
+
     return granted_privilege

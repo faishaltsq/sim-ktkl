@@ -546,3 +546,150 @@ class KredensialMonitoringTest(TestCase):
         resp = self.client.get(reverse('kredensial:history', args=[self.nakes.pk]))
         self.assertContains(resp, 'SPK-OLD')
         self.assertContains(resp, 'Digantikan')
+
+
+class KredensialSummarySyncTest(TestCase):
+    """Test sinkronisasi ringkasan kredensial ke field Nakes."""
+
+    def setUp(self):
+        self.user = User.objects.create_user(username='syncadmin', password='x', is_superuser=True)
+        self.profesi, _ = Profesi.objects.get_or_create(nama='ATLM')
+        self.nakes = Nakes.objects.create(
+            nama='Sync Test', profesi=self.profesi, unit_kerja='Lab',
+            no_str='STR-SYNC-1', masa_berlaku_str='2027-01-01',
+            no_sip='SIP-SYNC-1', masa_berlaku_sip='2027-01-01',
+            created_by=self.user,
+        )
+
+    def test_no_application_summary(self):
+        from kredensial.services.summary_sync import compute_summary
+        s = compute_summary(self.nakes)
+        self.assertEqual(s['status_kredensial'], 'Belum Pengajuan')
+        self.assertEqual(s['kewenangan_klinis'], 'Tidak Aktif')
+
+    def test_active_application_summary(self):
+        CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-SYNC-001', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Lab',
+            jenis='awal', diajukan_oleh=self.user, status='Aktif',
+        )
+        from kredensial.services.summary_sync import compute_summary
+        s = compute_summary(self.nakes)
+        self.assertEqual(s['status_kredensial'], 'Dalam Proses')
+        self.assertEqual(s['kewenangan_klinis'], 'Proses')
+
+    def test_finalized_appointment_syncs_nakes(self):
+        pejabat = User.objects.create_user(username='pejabat3', password='x')
+        make_group('pejabat')
+        pejabat.groups.add(Group.objects.get(name=ROLE_GROUPS['pejabat']))
+
+        app = CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-SYNC-002', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Lab',
+            jenis='awal', diajukan_oleh=self.user,
+            workflow_state='PENDING_FINAL_DECISION',
+        )
+        priv = ClinicalPrivilege.objects.create(
+            kode='SYNC-01', profesi=self.profesi, nama='Tes Kewenangan',
+        )
+        rp = RequestedPrivilege.objects.create(application=app, privilege=priv)
+        PrivilegeRecommendation.objects.create(
+            requested_privilege=rp, keputusan='direkomendasikan',
+            direkomendasikan_oleh=self.user,
+        )
+        appointment_service.finalize_appointment(
+            app,
+            {
+                'nomor_spk': 'SPK-SYNC-001', 'tanggal_terbit': '2026-01-01',
+                'tanggal_mulai_berlaku': '2026-01-01',
+                'tanggal_akhir_berlaku': '2027-12-31', 'keputusan': 'disetujui',
+            },
+            [{'requested_privilege_id': rp.pk, 'approved': True}],
+            pejabat,
+        )
+        self.nakes.refresh_from_db()
+        self.assertEqual(self.nakes.kewenangan_klinis, 'Aktif')
+
+    def test_suspension_sets_evaluasi(self):
+        pejabat = User.objects.create_user(username='pejabat4', password='x')
+        make_group('pejabat')
+        pejabat.groups.add(Group.objects.get(name=ROLE_GROUPS['pejabat']))
+
+        app = CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-SYNC-003', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Lab',
+            jenis='awal', diajukan_oleh=self.user,
+            workflow_state='PENDING_FINAL_DECISION',
+        )
+        priv = ClinicalPrivilege.objects.create(
+            kode='SYNC-02', profesi=self.profesi, nama='Tes Suspend',
+        )
+        rp = RequestedPrivilege.objects.create(application=app, privilege=priv)
+        PrivilegeRecommendation.objects.create(
+            requested_privilege=rp, keputusan='direkomendasikan',
+            direkomendasikan_oleh=self.user,
+        )
+        appt = appointment_service.finalize_appointment(
+            app,
+            {
+                'nomor_spk': 'SPK-SYNC-002', 'tanggal_terbit': '2026-01-01',
+                'tanggal_mulai_berlaku': '2026-01-01',
+                'tanggal_akhir_berlaku': '2027-12-31', 'keputusan': 'disetujui',
+            },
+            [{'requested_privilege_id': rp.pk, 'approved': True}],
+            pejabat,
+        )
+        granted = appt.granted_privileges.first()
+        appointment_service.change_granted_status(
+            granted, 'suspended', pejabat, 'Temuan monitoring',
+        )
+        self.nakes.refresh_from_db()
+        self.assertEqual(self.nakes.kewenangan_klinis, 'Evaluasi')
+
+    def test_sync_all_command(self):
+        from django.core.management import call_command
+        from io import StringIO
+        CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-SYNC-004', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Lab',
+            jenis='awal', diajukan_oleh=self.user, status='Aktif',
+        )
+        out = StringIO()
+        call_command('sync_nakes_kredensial', stdout=out)
+        self.assertIn('Sinkronisasi selesai', out.getvalue())
+        self.nakes.refresh_from_db()
+        self.assertEqual(self.nakes.status_kredensial, 'Dalam Proses')
+
+
+class KredensialMasterSeedTest(TestCase):
+    """Test seeder master kredensial."""
+
+    def test_seed_creates_masters(self):
+        from django.core.management import call_command
+        from io import StringIO
+        out = StringIO()
+        call_command('seed_kredensial_master', stdout=out)
+        self.assertTrue(CredentialRequirement.objects.exists())
+        self.assertTrue(ClinicalPrivilege.objects.exists())
+        # Idempoten
+        req_count = CredentialRequirement.objects.count()
+        priv_count = ClinicalPrivilege.objects.count()
+        call_command('seed_kredensial_master', stdout=StringIO())
+        self.assertEqual(CredentialRequirement.objects.count(), req_count)
+        self.assertEqual(ClinicalPrivilege.objects.count(), priv_count)
+
+    def test_seed_creates_role_groups(self):
+        from django.core.management import call_command
+        from io import StringIO
+        call_command('seed_kredensial_master', stdout=StringIO())
+        from kredensial.permissions import ROLE_GROUPS
+        for group_name in ROLE_GROUPS.values():
+            self.assertTrue(Group.objects.filter(name=group_name).exists())
+
+    def test_seed_accounts(self):
+        from django.core.management import call_command
+        from io import StringIO
+        call_command('seed_kredensial_accounts', password='Test@123', stdout=StringIO())
+        user = User.objects.get(username='kred_pejabat')
+        self.assertTrue(user.check_password('Test@123'))
+        self.assertTrue(user.groups.filter(name=ROLE_GROUPS['pejabat']).exists())
