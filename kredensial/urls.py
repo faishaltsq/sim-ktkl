@@ -23,4 +23,21 @@ urlpatterns = [
     path('master/syarat/', views.requirement_list, name='requirement_list'),
     path('master/syarat/tambah/', views.requirement_create, name='requirement_create'),
     path('master/syarat/<int:pk>/edit/', views.requirement_update, name='requirement_update'),
+
+    # Asesmen kompetensi
+    path('pengajuan/<int:pk>/asesmen/tambah/', views.assessment_create, name='assessment_create'),
+    path('asesmen/<int:pk>/hasil/tambah/', views.assessment_result_add, name='assessment_result_add'),
+    path('asesmen/<int:pk>/selesai/', views.assessment_complete, name='assessment_complete'),
+
+    # Kewenangan diminta
+    path('pengajuan/<int:pk>/kewenangan/tambah/', views.requested_privilege_add, name='requested_privilege_add'),
+
+    # Rekomendasi RKK
+    path('rekomendasi/<int:pk>/', views.recommendation_edit, name='recommendation_edit'),
+    path('pengajuan/<int:pk>/review/', views.review_create, name='review_create'),
+
+    # Master katalog kewenangan
+    path('master/kewenangan/', views.privilege_list, name='privilege_list'),
+    path('master/kewenangan/tambah/', views.privilege_create, name='privilege_create'),
+    path('master/kewenangan/<int:pk>/edit/', views.privilege_update, name='privilege_update'),
 ]

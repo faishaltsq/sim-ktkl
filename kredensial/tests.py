@@ -8,7 +8,9 @@ from django.utils import timezone
 from nakes.models import Nakes, Profesi
 from kredensial.models import (
     CredentialRequirement, CredentialApplication, CredentialDocument,
-    DocumentVerification,
+    DocumentVerification, ClinicalPrivilege, RequestedPrivilege,
+    CompetencyAssessment, PrivilegeRecommendation, CredentialReview,
+    GrantedPrivilege,
 )
 from kredensial.permissions import ROLE_GROUPS, user_can, user_can_transition
 
@@ -142,3 +144,105 @@ class KredensialViewTest(TestCase):
         self.assertFalse(user_can(sekretariat, 'approve'))
         self.assertTrue(user_can_transition(sekretariat, 'DRAFT', 'SUBMITTED'))
         self.assertFalse(user_can_transition(sekretariat, 'PENDING_FINAL_DECISION', 'APPROVED'))
+
+
+class KredensialAssessmentTest(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.asesor = User.objects.create_user(username='asesor', password='x')
+        make_group('asesor')
+        self.asesor.groups.add(Group.objects.get(name=ROLE_GROUPS['asesor']))
+        self.client.login(username='asesor', password='x')
+
+        self.subkomite = User.objects.create_user(username='subkomite', password='x')
+        make_group('subkomite')
+        self.subkomite.groups.add(Group.objects.get(name=ROLE_GROUPS['subkomite']))
+
+        self.profesi, _ = Profesi.objects.get_or_create(nama='Radiografer')
+        self.nakes = Nakes.objects.create(
+            nama='Andi Wijaya', profesi=self.profesi, unit_kerja='Radiologi',
+            no_str='STR-ASESMEN-1', masa_berlaku_str='2027-01-01',
+            no_sip='SIP-ASESMEN-1', masa_berlaku_sip='2027-01-01',
+            created_by=self.asesor,
+        )
+        self.app = CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-ASESMEN-001', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Radiologi',
+            jenis='awal', diajukan_oleh=self.asesor, workflow_state='UNDER_ASSESSMENT',
+        )
+        self.privilege = ClinicalPrivilege.objects.create(
+            kode='RAD-01', profesi=self.profesi, nama='Foto Toraks',
+        )
+        self.rp = RequestedPrivilege.objects.create(
+            application=self.app, privilege=self.privilege,
+        )
+
+    def test_create_assessment(self):
+        resp = self.client.post(reverse('kredensial:assessment_create', args=[self.app.pk]), {
+            'metode': 'observasi', 'tanggal_asesmen': '2026-10-28',
+            'ruang_lingkup': 'Foto toraks', 'status': 'berlangsung',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(CompetencyAssessment.objects.filter(application=self.app).count(), 1)
+
+    def test_assessment_result_and_complete(self):
+        a = CompetencyAssessment.objects.create(
+            application=self.app, asesor=self.asesor, metode='observasi',
+            tanggal_asesmen='2026-10-28', status='berlangsung',
+        )
+        resp = self.client.post(reverse('kredensial:assessment_result_add', args=[a.pk]), {
+            'kompetensi': 'Foto toraks', 'hasil': 'kompeten',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertEqual(a.results.count(), 1)
+
+        resp = self.client.post(reverse('kredensial:assessment_complete', args=[a.pk]))
+        a.refresh_from_db()
+        self.assertEqual(a.status, 'selesai')
+
+    def test_asesor_cannot_recommend(self):
+        resp = self.client.get(reverse('kredensial:recommendation_edit', args=[self.rp.pk]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_subkomite_can_recommend(self):
+        c = Client()
+        c.login(username='subkomite', password='x')
+        resp = c.post(reverse('kredensial:recommendation_edit', args=[self.rp.pk]), {
+            'keputusan': 'supervisi',
+            'kebutuhan_supervisi': 'Dengan radiolog senior',
+            'dasar_pertimbangan': 'Asesmen observasi kompeten',
+        })
+        self.assertEqual(resp.status_code, 302)
+        rec = PrivilegeRecommendation.objects.get(requested_privilege=self.rp)
+        self.assertEqual(rec.keputusan, 'supervisi')
+        self.assertEqual(rec.direkomendasikan_oleh, self.subkomite)
+
+    def test_recommendation_does_not_grant_privilege(self):
+        PrivilegeRecommendation.objects.create(
+            requested_privilege=self.rp, keputusan='direkomendasikan',
+            direkomendasikan_oleh=self.subkomite,
+        )
+        self.assertFalse(GrantedPrivilege.objects.exists())
+
+    def test_committee_review_endorse(self):
+        c = Client()
+        c.login(username='subkomite', password='x')
+        resp = c.post(reverse('kredensial:review_create', args=[self.app.pk]), {
+            'catatan': 'Disetujui komite', 'disetujui': 'on',
+        })
+        self.assertEqual(resp.status_code, 302)
+        review = CredentialReview.objects.get(application=self.app)
+        self.assertTrue(review.disetujui)
+
+    def test_privilege_catalog_crud(self):
+        admin = User.objects.create_user(username='adm', password='x', is_superuser=True)
+        c = Client()
+        c.login(username='adm', password='x')
+        resp = c.get(reverse('kredensial:privilege_list'))
+        self.assertEqual(resp.status_code, 200)
+        resp = c.post(reverse('kredensial:privilege_create'), {
+            'kode': 'RAD-02', 'profesi': self.profesi.pk, 'nama': 'USG Abdomen',
+            'versi_kebijakan': '1.0',
+        })
+        self.assertEqual(resp.status_code, 302)
+        self.assertTrue(ClinicalPrivilege.objects.filter(kode='RAD-02').exists())

@@ -5,6 +5,12 @@ from .models import (
     CredentialDocument,
     DocumentVerification,
     CredentialRequirement,
+    CompetencyAssessment,
+    AssessmentResult,
+    ClinicalPrivilege,
+    RequestedPrivilege,
+    PrivilegeRecommendation,
+    CredentialReview,
 )
 
 
@@ -72,4 +78,102 @@ class CredentialRequirementForm(forms.ModelForm):
         ]
         widgets = {
             'deskripsi': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+# ==========================================
+# ASESMEN KOMPETENSI
+# ==========================================
+class CompetencyAssessmentForm(forms.ModelForm):
+    class Meta:
+        model = CompetencyAssessment
+        fields = [
+            'asesor', 'nama_asesor_eksternal', 'metode', 'tanggal_asesmen',
+            'ruang_lingkup', 'kriteria', 'temuan', 'bukti_pendukung',
+            'rekomendasi_asesor', 'status', 'catatan_reviewer',
+            'pernyataan_benturan_kepentingan',
+        ]
+        widgets = {
+            'tanggal_asesmen': forms.DateInput(attrs={'type': 'date'}),
+            'ruang_lingkup': forms.Textarea(attrs={'rows': 2}),
+            'kriteria': forms.Textarea(attrs={'rows': 2}),
+            'temuan': forms.Textarea(attrs={'rows': 3}),
+            'bukti_pendukung': forms.Textarea(attrs={'rows': 2}),
+            'rekomendasi_asesor': forms.Textarea(attrs={'rows': 2}),
+            'catatan_reviewer': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['asesor'].required = False
+        self.fields['nama_asesor_eksternal'].required = False
+
+
+class AssessmentResultForm(forms.ModelForm):
+    class Meta:
+        model = AssessmentResult
+        fields = ['kompetensi', 'hasil', 'skor', 'catatan']
+
+
+# ==========================================
+# MASTER KEWENANGAN KLINIS
+# ==========================================
+class ClinicalPrivilegeForm(forms.ModelForm):
+    class Meta:
+        model = ClinicalPrivilege
+        fields = [
+            'kode', 'profesi', 'nama', 'deskripsi', 'ruang_lingkup',
+            'kompetensi_wajib', 'bukti_wajib', 'pembatasan',
+            'aturan_supervisi', 'aktif', 'versi_kebijakan',
+        ]
+        widgets = {
+            'deskripsi': forms.Textarea(attrs={'rows': 2}),
+            'ruang_lingkup': forms.Textarea(attrs={'rows': 2}),
+            'kompetensi_wajib': forms.Textarea(attrs={'rows': 2}),
+            'bukti_wajib': forms.Textarea(attrs={'rows': 2}),
+            'pembatasan': forms.Textarea(attrs={'rows': 2}),
+            'aturan_supervisi': forms.Textarea(attrs={'rows': 2}),
+        }
+
+
+class RequestedPrivilegeForm(forms.ModelForm):
+    class Meta:
+        model = RequestedPrivilege
+        fields = ['privilege', 'alasan', 'catatan']
+        widgets = {
+            'alasan': forms.Textarea(attrs={'rows': 2}),
+            'catatan': forms.Textarea(attrs={'rows': 2}),
+        }
+
+    def __init__(self, *args, application=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if application is not None:
+            self.fields['privilege'].queryset = ClinicalPrivilege.objects.filter(
+                profesi=application.profesi_snapshot, aktif=True,
+            )
+
+
+# ==========================================
+# REKOMENDASI RKK
+# ==========================================
+class PrivilegeRecommendationForm(forms.ModelForm):
+    class Meta:
+        model = PrivilegeRecommendation
+        fields = [
+            'keputusan', 'pembatasan', 'kebutuhan_supervisi',
+            'kualifikasi_supervisor', 'dasar_pertimbangan',
+        ]
+        widgets = {
+            'pembatasan': forms.Textarea(attrs={'rows': 2}),
+            'kebutuhan_supervisi': forms.Textarea(attrs={'rows': 2}),
+            'dasar_pertimbangan': forms.Textarea(attrs={'rows': 3}),
+        }
+
+
+class CredentialReviewForm(forms.ModelForm):
+    class Meta:
+        model = CredentialReview
+        fields = ['catatan', 'disetujui']
+        widgets = {
+            'catatan': forms.Textarea(attrs={'rows': 3}),
         }

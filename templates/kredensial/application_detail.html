@@ -125,14 +125,17 @@
 
         <!-- ASESMEN -->
         <div class="card mb-3">
-            <div class="card-header bg-white py-2">
+            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                 <span class="fw-bold" style="font-size:0.85rem;">Asesmen Kompetensi</span>
+                {% if can_assess %}
+                <a href="{% url 'kredensial:assessment_create' app.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Tambah Asesmen</a>
+                {% endif %}
             </div>
             {% if assessments %}
             <div class="table-responsive">
                 <table class="table table-sm mb-0">
                     <thead>
-                        <tr><th>Metode</th><th>Asesor</th><th>Tanggal</th><th>Status</th><th>Hasil</th></tr>
+                        <tr><th>Metode</th><th>Asesor</th><th>Tanggal</th><th>Status</th><th>Hasil</th><th class="text-end">Aksi</th></tr>
                     </thead>
                     <tbody>
                         {% for a in assessments %}
@@ -146,6 +149,19 @@
                                 <span class="badge badge-status-{% if r.hasil == 'kompeten' %}success{% elif r.hasil == 'kompeten_supervisi' %}info{% elif r.hasil == 'belum_kompeten' %}danger{% else %}warning{% endif %}">{{ r.get_hasil_display }}</span>
                                 {% endfor %}
                             </td>
+                            <td class="text-end">
+                                <div class="d-flex gap-1 justify-content-end">
+                                    {% if can_assess %}
+                                    <a href="{% url 'kredensial:assessment_result_add' a.pk %}" class="btn btn-sm btn-outline-secondary" title="Tambah hasil"><i class="bi bi-plus"></i></a>
+                                    {% if a.status != 'selesai' %}
+                                    <form method="post" action="{% url 'kredensial:assessment_complete' a.pk %}" class="d-inline">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-outline-success" title="Tandai selesai"><i class="bi bi-check-lg"></i></button>
+                                    </form>
+                                    {% endif %}
+                                    {% endif %}
+                                </div>
+                            </td>
                         </tr>
                         {% endfor %}
                     </tbody>
@@ -158,14 +174,22 @@
 
         <!-- REKOMENDASI -->
         <div class="card mb-3">
-            <div class="card-header bg-white py-2">
+            <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                 <span class="fw-bold" style="font-size:0.85rem;">Rekomendasi Kewenangan</span>
+                <div class="d-flex gap-1">
+                    {% if can_create %}
+                    <a href="{% url 'kredensial:requested_privilege_add' app.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-plus-lg me-1"></i>Kewenangan</a>
+                    {% endif %}
+                    {% if can_endorse %}
+                    <a href="{% url 'kredensial:review_create' app.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-clipboard-check me-1"></i>Review Komite</a>
+                    {% endif %}
+                </div>
             </div>
             {% if requested_privileges %}
             <div class="table-responsive">
                 <table class="table table-sm mb-0">
                     <thead>
-                        <tr><th>Kewenangan</th><th>Rekomendasi</th><th>Pembatasan</th><th>Supervisi</th></tr>
+                        <tr><th>Kewenangan</th><th>Rekomendasi</th><th>Pembatasan</th><th>Supervisi</th><th class="text-end">Aksi</th></tr>
                     </thead>
                     <tbody>
                         {% for rp in requested_privileges %}
@@ -178,6 +202,11 @@
                             </td>
                             <td style="font-size:0.78rem;">{% if rec %}{{ rec.pembatasan|default:"—"|truncatechars:40 }}{% endif %}</td>
                             <td style="font-size:0.78rem;">{% if rec %}{{ rec.kebutuhan_supervisi|default:"—"|truncatechars:40 }}{% endif %}</td>
+                            <td class="text-end">
+                                {% if can_recommend %}
+                                <a href="{% url 'kredensial:recommendation_edit' rp.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                {% endif %}
+                            </td>
                         </tr>
                         {% endwith %}
                         {% endfor %}

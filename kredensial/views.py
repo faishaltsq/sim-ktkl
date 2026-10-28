@@ -21,13 +21,22 @@ from .models import (
     CredentialFollowUp,
     ClinicalPrivilege,
     CompetencyAssessment,
+    AssessmentResult,
+    RequestedPrivilege,
     PrivilegeRecommendation,
+    CredentialReview,
 )
 from .forms import (
     CredentialApplicationForm,
     CredentialDocumentForm,
     DocumentVerificationForm,
     CredentialRequirementForm,
+    CompetencyAssessmentForm,
+    AssessmentResultForm,
+    ClinicalPrivilegeForm,
+    RequestedPrivilegeForm,
+    PrivilegeRecommendationForm,
+    CredentialReviewForm,
 )
 from .services import workflow
 from .permissions import user_can, kredensial_role_required
@@ -205,6 +214,7 @@ def application_detail(request, pk):
         'can_verify': user_can(request.user, 'verify_document'),
         'can_assess': user_can(request.user, 'assess'),
         'can_recommend': user_can(request.user, 'recommend'),
+        'can_endorse': user_can(request.user, 'endorse'),
         'can_approve': user_can(request.user, 'approve'),
     }
     return render(request, 'kredensial/application_detail.html', context)
@@ -374,3 +384,167 @@ def requirement_update(request, pk):
     else:
         form = CredentialRequirementForm(instance=req)
     return render(request, 'kredensial/requirement_form.html', {'form': form, 'mode': 'update'})
+
+
+# ==========================================
+# ASESMEN KOMPETENSI
+# ==========================================
+@login_required
+@kredensial_role_required('assess')
+def assessment_create(request, pk):
+    app = get_object_or_404(CredentialApplication, pk=pk)
+    if request.method == 'POST':
+        form = CompetencyAssessmentForm(request.POST)
+        if form.is_valid():
+            a = form.save(commit=False)
+            a.application = app
+            if not a.asesor:
+                a.asesor = request.user
+            a.save()
+            messages.success(request, 'Asesmen berhasil dicatat.')
+            return redirect('kredensial:application_detail', pk=app.pk)
+    else:
+        form = CompetencyAssessmentForm()
+    return render(request, 'kredensial/assessment_form.html', {'form': form, 'app': app})
+
+
+@login_required
+@kredensial_role_required('assess')
+def assessment_result_add(request, pk):
+    assessment = get_object_or_404(CompetencyAssessment, pk=pk)
+    if request.method == 'POST':
+        form = AssessmentResultForm(request.POST)
+        if form.is_valid():
+            r = form.save(commit=False)
+            r.assessment = assessment
+            r.save()
+            messages.success(request, 'Hasil asesmen ditambahkan.')
+            return redirect('kredensial:application_detail', pk=assessment.application_id)
+    else:
+        form = AssessmentResultForm()
+    return render(request, 'kredensial/assessment_result_form.html', {
+        'form': form, 'assessment': assessment,
+    })
+
+
+@login_required
+@kredensial_role_required('assess')
+def assessment_complete(request, pk):
+    assessment = get_object_or_404(CompetencyAssessment, pk=pk)
+    if request.method == 'POST':
+        assessment.status = 'selesai'
+        assessment.save()
+        messages.success(request, 'Asesmen ditandai selesai.')
+    return redirect('kredensial:application_detail', pk=assessment.application_id)
+
+
+# ==========================================
+# KEWENANGAN DIMINTA
+# ==========================================
+@login_required
+@kredensial_role_required('create_application')
+def requested_privilege_add(request, pk):
+    app = get_object_or_404(CredentialApplication, pk=pk)
+    if request.method == 'POST':
+        form = RequestedPrivilegeForm(request.POST, application=app)
+        if form.is_valid():
+            rp = form.save(commit=False)
+            rp.application = app
+            try:
+                rp.save()
+                messages.success(request, 'Kewenangan diminta ditambahkan.')
+            except Exception:
+                messages.error(request, 'Kewenangan tersebut sudah diminta.')
+            return redirect('kredensial:application_detail', pk=app.pk)
+    else:
+        form = RequestedPrivilegeForm(application=app)
+    return render(request, 'kredensial/requested_privilege_form.html', {'form': form, 'app': app})
+
+
+# ==========================================
+# REKOMENDASI RKK
+# ==========================================
+@login_required
+@kredensial_role_required('recommend')
+def recommendation_edit(request, pk):
+    rp = get_object_or_404(RequestedPrivilege, pk=pk)
+    instance = getattr(rp, 'recommendation', None)
+    if request.method == 'POST':
+        form = PrivilegeRecommendationForm(request.POST, instance=instance)
+        if form.is_valid():
+            rec = form.save(commit=False)
+            rec.requested_privilege = rp
+            rec.direkomendasikan_oleh = request.user
+            rec.save()
+            messages.success(request, 'Rekomendasi disimpan.')
+            return redirect('kredensial:application_detail', pk=rp.application_id)
+    else:
+        form = PrivilegeRecommendationForm(instance=instance)
+    return render(request, 'kredensial/recommendation_form.html', {
+        'form': form, 'rp': rp, 'app': rp.application,
+    })
+
+
+@login_required
+@kredensial_role_required('endorse')
+def review_create(request, pk):
+    app = get_object_or_404(CredentialApplication, pk=pk)
+    instance = getattr(app, 'committee_review', None)
+    if request.method == 'POST':
+        form = CredentialReviewForm(request.POST, instance=instance)
+        if form.is_valid():
+            review = form.save(commit=False)
+            review.application = app
+            review.reviewer = request.user
+            review.save()
+            messages.success(request, 'Review komite disimpan.')
+            return redirect('kredensial:application_detail', pk=app.pk)
+    else:
+        form = CredentialReviewForm(instance=instance)
+    return render(request, 'kredensial/review_form.html', {'form': form, 'app': app})
+
+
+# ==========================================
+# MASTER KATALOG KEWENANGAN
+# ==========================================
+@login_required
+@kredensial_role_required('manage_master')
+def privilege_list(request):
+    qs = ClinicalPrivilege.objects.select_related('profesi').order_by('profesi__nama', 'kode')
+    profesi = request.GET.get('profesi', '')
+    if profesi:
+        qs = qs.filter(profesi_id=profesi)
+    return render(request, 'kredensial/privilege_list.html', {
+        'privileges': qs,
+        'profesi_list': Profesi.objects.all(),
+        'profesi_filter': profesi,
+    })
+
+
+@login_required
+@kredensial_role_required('manage_master')
+def privilege_create(request):
+    if request.method == 'POST':
+        form = ClinicalPrivilegeForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Kewenangan klinis berhasil ditambahkan.')
+            return redirect('kredensial:privilege_list')
+    else:
+        form = ClinicalPrivilegeForm()
+    return render(request, 'kredensial/privilege_form.html', {'form': form, 'mode': 'create'})
+
+
+@login_required
+@kredensial_role_required('manage_master')
+def privilege_update(request, pk):
+    priv = get_object_or_404(ClinicalPrivilege, pk=pk)
+    if request.method == 'POST':
+        form = ClinicalPrivilegeForm(request.POST, instance=priv)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Kewenangan klinis berhasil diperbarui.')
+            return redirect('kredensial:privilege_list')
+    else:
+        form = ClinicalPrivilegeForm(instance=priv)
+    return render(request, 'kredensial/privilege_form.html', {'form': form, 'mode': 'update'})

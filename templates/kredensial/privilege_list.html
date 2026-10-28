@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Master Kewenangan Klinis - VIRA NAKES{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Master Kewenangan Klinis</h1>
+        <p class="page-subtitle-text">Katalog kewenangan klinis dan teknis per profesi.</p>
+    </div>
+    <a href="{% url 'kredensial:privilege_create' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Tambah Kewenangan</a>
+</div>
+
+<div class="card mb-3">
+    <div class="card-body py-2 px-3">
+        <form method="get" class="d-flex gap-2 align-items-center">
+            <select name="profesi" class="form-select form-select-sm" style="width:auto;" onchange="this.form.submit()">
+                <option value="">Semua Profesi</option>
+                {% for p in profesi_list %}
+                <option value="{{ p.pk }}" {% if profesi_filter == p.pk|stringformat:"i" %}selected{% endif %}>{{ p.nama }}</option>
+                {% endfor %}
+            </select>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead>
+                <tr>
+                    <th>Kode</th>
+                    <th>Profesi</th>
+                    <th>Nama Kewenangan</th>
+                    <th>Ruang Lingkup</th>
+                    <th>Supervisi</th>
+                    <th>Status</th>
+                    <th class="text-end">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for p in privileges %}
+                <tr>
+                    <td><code style="font-size:0.75rem;">{{ p.kode }}</code></td>
+                    <td><span class="badge badge-status-info">{{ p.profesi.nama }}</span></td>
+                    <td style="font-size:0.82rem;font-weight:600;">{{ p.nama }}</td>
+                    <td style="font-size:0.78rem;color:var(--text-secondary);">{{ p.ruang_lingkup|default:"—"|truncatechars:50 }}</td>
+                    <td style="font-size:0.78rem;color:var(--text-secondary);">{{ p.aturan_supervisi|default:"—"|truncatechars:40 }}</td>
+                    <td>{% if p.aktif %}<span class="badge badge-status-success">Aktif</span>{% else %}<span class="badge badge-status-neutral">Nonaktif</span>{% endif %}</td>
+                    <td class="text-end">
+                        <a href="{% url 'kredensial:privilege_update' p.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="7" class="text-center text-muted py-4">Belum ada katalog kewenangan.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
