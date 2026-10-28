@@ -152,15 +152,9 @@ Kelompok test:
    otomatis diinginkan.
 2. **Tanda tangan elektronik** — tidak diimplementasikan (sesuai blueprint).
    Sistem hanya menyimpan metadata dan dokumen hasil unggahan.
-3. **Seed data kredensial** — belum ada management command khusus untuk
-   mengisi `CredentialRequirement` dan `ClinicalPrivilege` contoh. Perlu
-   input administrator RS dari standar profesi tervalidasi.
-4. **Group role** — belum otomatis dibuat. Perlu seeder atau setup awal
-   (lihat bagian 12).
-5. **Nakes summary sync** — field `status_kredensial`/`kewenangan_klinis`
-   pada `Nakes` belum disinkronkan otomatis dari keputusan final. Blueprint
-   menyatakan jangan jadikan sumber kebenaran; sinkronisasi sengaja
-   ditunda sampai kebijakan RS jelas.
+3. **Katalog kewenangan bersifat acuan awal** — 47 entri untuk 17 profesi
+   sudah diseed, namun administrator RS WAJIB meninjau dan menyesuaikan
+   dengan SOP serta regulasi internal sebelum digunakan operasional.
 
 ## 11. Persyaratan Kebijakan RS yang Belum Diresolusi
 
@@ -171,21 +165,36 @@ Kelompok test:
 5. Daftar kewenangan klinis aktual per profesi (katalog masih kosong —
    harus diisi administrator dari regulasi tervalidasi)
 
-## 12. Rekomendasi Tindak Lanjut
+## 12. Tindak Lanjut yang Sudah Dilakukan
 
-1. **Buat group role** — jalankan sekali:
-   ```python
-   from kredensial.permissions import ROLE_GROUPS
-   from django.contrib.auth.models import Group
-   for name in ROLE_GROUPS.values():
-       Group.objects.get_or_create(name=name)
-   ```
-   Pertimbangkan menambahkannya ke `seed_data`.
-2. **Isi katalog kewenangan** — per profesi, dari standar yang berlaku.
-3. **Isi master syarat dokumen** — per profesi, dengan referensi regulasi.
-4. **Tetapkan kebijakan** — interval rekredensial, masa berlaku SPK,
+1. **Group role dibuat otomatis** — `seed_kredensial_master` membuat 8 group
+   role secara idempoten; juga dipanggil dari `seed_data`.
+2. **Katalog kewenangan diseed** — 47 entri untuk 17 profesi
+   (`seed_kredensial_master`), dengan peringatan agar ditinjau administrator.
+3. **Master syarat dokumen diseed** — 131 entri dengan referensi regulasi
+   (UU 17/2023, Permenkes 13/2025, Permenkes 6/2026) dan pembeda profesi
+   wajib SIP vs teknis.
+4. **Akun demo per role dibuat** — `seed_kredensial_accounts` membuat 7 akun
+   (kred_sekretariat, kred_verifikator, kred_asesor, kred_subkomite,
+   kred_ketua, kred_pejabat, kred_auditor) dengan group assignment.
+   Password default `Kredensial@123` (ubah via `--password` atau env
+   `KREDENSIAL_DEMO_PASSWORD`).
+5. **Sinkronisasi ringkasan Nakes diimplementasikan** —
+   `kredensial/services/summary_sync.py` menurunkan `status_kredensial` dan
+   `kewenangan_klinis` dari keputusan final. Dipanggil otomatis setelah
+   finalisasi SPK dan perubahan status kewenangan, serta manual via
+   `manage.py sync_nakes_kredensial` (ada `--dry-run`).
+6. **Deployment chain diperbarui** — `build.sh` dan `railway.toml`
+   preDeploy menjalankan `seed_kredensial_master`,
+   `seed_kredensial_accounts`, dan `sync_nakes_kredensial`.
+
+## 13. Rekomendasi Tindak Lanjut Berikutnya
+
+1. **Tinjau katalog kewenangan** — administrator RS harus memvalidasi 47
+   entri terhadap SOP dan regulasi internal sebelum operasional.
+2. **Tetapkan kebijakan** — interval rekredensial, masa berlaku SPK,
    hierotoris penandatangan.
-5. **Sinkronisasi ringkasan Nakes** — jika diinginkan, buat service
-   terpisah yang memperbarui `status_kredensial`/`kewenangan_klinis`
-   dari `ClinicalAppointment` final.
-6. **PDF otomatis** — evaluasi WeasyPrint/ReportLab untuk SPK draft.
+3. **Ganti password akun demo** setelah pengujian selesai.
+4. **PDF otomatis** — evaluasi WeasyPrint/ReportLab untuk SPK draft.
+5. **Backfill summary** — jalankan `manage.py sync_nakes_kredensial`
+   setelah ada data kredensial produksi.

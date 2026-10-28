@@ -109,12 +109,27 @@ pip install -r requirements.txt
 # Migrate & seed data
 python manage.py migrate
 python manage.py seed_data
+python manage.py seed_kredensial_master
+python manage.py seed_kredensial_accounts
+python manage.py sync_nakes_kredensial
 
 # Jalankan server
 python manage.py runserver
 ```
 
 Buka `http://localhost:8000`
+
+### Command Kredensial
+
+| Command | Fungsi |
+|---|---|
+| `seed_kredensial_master` | Seed syarat dokumen & katalog kewenangan per profesi (idempoten) |
+| `seed_kredensial_accounts` | Buat 7 akun demo per role kredensial |
+| `sync_nakes_kredensial` | Sinkronkan ringkasan `status_kredensial`/`kewenangan_klinis` Nakes (`--dry-run` untuk pratinjau) |
+
+Akun demo kredensial: `kred_sekretariat`, `kred_verifikator`, `kred_asesor`,
+`kred_subkomite`, `kred_ketua`, `kred_pejabat`, `kred_auditor`
+(password default `Kredensial@123`).
 
 ## Environment Variables (Produksi)
 
