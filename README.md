@@ -35,6 +35,14 @@ Aplikasi web berbasis Django untuk mengelola data **Kredensial, Evaluasi, Etik &
 - Dokumen umum komite: SOP, SK, Panduan, Formulir, Kebijakan
 - Upload, edit, download, hapus
 
+### 🛡️ Sub. Kredensial
+- **Pengajuan Kredensial** — kredensial awal, rekredensial berkala, penambahan/perubahan kewenangan, rekredensial khusus
+- **Verifikasi Dokumen** — syarat konfigurable per profesi, versioning dokumen, riwayat verifikasi (Valid / Perlu Perbaikan / Ditolak)
+- **Asesmen Kompetensi** — wawancara, review portofolio, observasi praktik, uji keterampilan, review dokumen; multi-asesor dengan pernyataan bebas benturan kepentingan
+- **Rekomendasi RKK** — rekomendasi per kewenangan klinis (direkomendasikan / dengan supervisi / dengan pembatasan / ditunda / tidak direkomendasikan) + endorsement komite
+- **Penetapan SPK/RKK** — keputusan final pejabat berwenang, snapshot kewenangan efektif, unggah dokumen bertandatangan, cetak SPK
+- **Monitoring & Rekredensial** — dashboard SPK aktif/mendekati kedaluwarsa/kedaluwarsa, supervisi aktif, tindak lanjut, rekam jejak lengkap, siklus rekredensial baru
+- **Workflow state machine** — 16 status dengan transisi terotorisasi, transaksional, dan audit trail immutable
 ### 📝 Audit Log
 - Pencatatan otomatis setiap aksi CREATE / UPDATE / DELETE
 
@@ -67,6 +75,14 @@ sim-ktkl/
 │   ├── forms.py        # Django/Crispy forms
 │   ├── urls.py         # URL routing (72 endpoints)
 │   └── admin.py        # Admin site config
+├── kredensial/         # App Sub. Kredensial (workflow SPK/RKK)
+│   ├── models.py       # 14 model kredensial + event history
+│   ├── kredensial_models.py  # Model domain (asesmen, privilege, SPK, monitoring)
+│   ├── views.py        # Function-based views (26 endpoints)
+│   ├── forms.py        # Django forms
+│   ├── permissions.py  # Role-based access control (9 role)
+│   ├── services/       # Workflow state machine + appointment service
+│   └── tests.py        # 32 automated tests
 ├── templates/          # HTML templates (dashboard, CRUD, print, calendar)
 ├── static/             # Static assets (logo, favicon)
 ├── requirements.txt    # Dependencies
