@@ -1,5 +1,6 @@
 """Views Sub. Kredensial — dashboard, pengajuan, verifikasi dokumen."""
 import os
+from django.core.exceptions import ValidationError
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
@@ -37,8 +38,11 @@ from .forms import (
     RequestedPrivilegeForm,
     PrivilegeRecommendationForm,
     CredentialReviewForm,
+    ClinicalAppointmentForm,
+    AppointmentDocumentForm,
 )
 from .services import workflow
+from .services import appointment as appointment_service
 from .permissions import user_can, kredensial_role_required
 
 
@@ -548,3 +552,112 @@ def privilege_update(request, pk):
     else:
         form = ClinicalPrivilegeForm(instance=priv)
     return render(request, 'kredensial/privilege_form.html', {'form': form, 'mode': 'update'})
+
+
+# ==========================================
+# PENETAPAN SPK / RKK
+# ==========================================
+@login_required
+@kredensial_role_required('approve')
+def appointment_create(request, pk):
+    """Form penetapan keputusan final oleh pejabat berwenang."""
+    app = get_object_or_404(
+        CredentialApplication.objects.select_related('nakes'), pk=pk,
+    )
+    existing = getattr(app, 'appointment', None)
+    if existing is not None and existing.is_final:
+        messages.error(request, 'Keputusan untuk pengajuan ini sudah difinalisasi.')
+        return redirect('kredensial:application_detail', pk=pk)
+
+    recs = PrivilegeRecommendation.objects.filter(
+        requested_privilege__application=app,
+    ).select_related('requested_privilege__privilege')
+
+    if request.method == 'POST':
+        form = ClinicalAppointmentForm(request.POST, instance=existing)
+        if form.is_valid():
+            selections = []
+            for rec in recs:
+                rp_id = rec.requested_privilege_id
+                selections.append({
+                    'requested_privilege_id': rp_id,
+                    'approved': request.POST.get(f'grant_{rp_id}') == 'on',
+                    'redaksi_final': request.POST.get(f'redaksi_{rp_id}', ''),
+                    'pembatasan': request.POST.get(f'pembatasan_{rp_id}', ''),
+                    'kebutuhan_supervisi': request.POST.get(f'supervisi_{rp_id}', ''),
+                })
+            try:
+                appointment_service.finalize_appointment(
+                    app, form.cleaned_data, selections, request.user,
+                )
+                messages.success(request, 'Keputusan SPK berhasil difinalisasi.')
+                return redirect('kredensial:appointment_detail', pk=app.pk)
+            except ValidationError as e:
+                for field, errs in e.message_dict.items():
+                    form.add_error(None, f'{field}: {", ".join(errs)}')
+                messages.error(request, 'Finalisasi gagal — periksa data keputusan.')
+    else:
+        form = ClinicalAppointmentForm(instance=existing)
+
+    return render(request, 'kredensial/appointment_form.html', {
+        'form': form, 'app': app, 'recommendations': recs,
+    })
+
+
+@login_required
+def appointment_detail(request, pk):
+    app = get_object_or_404(CredentialApplication, pk=pk)
+    appointment = getattr(app, 'appointment', None)
+    if appointment is None:
+        messages.error(request, 'Belum ada penetapan SPK untuk pengajuan ini.')
+        return redirect('kredensial:application_detail', pk=pk)
+    granted = appointment.granted_privileges.select_related('privilege')
+    can_issue = user_can(request.user, 'issue_document')
+    return render(request, 'kredensial/appointment_detail.html', {
+        'app': app, 'appointment': appointment, 'granted_privileges': granted,
+        'can_issue': can_issue,
+    })
+
+
+@login_required
+@kredensial_role_required('issue_document')
+def appointment_document_upload(request, pk):
+    """Unggah dokumen SPK/RKK resmi bertandatangan."""
+    appointment = get_object_or_404(ClinicalAppointment, pk=pk)
+    if request.method == 'POST':
+        form = AppointmentDocumentForm(request.POST, request.FILES, instance=appointment)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Dokumen SPK/RKK berhasil dilampirkan.')
+            return redirect('kredensial:appointment_detail', pk=appointment.application_id)
+    else:
+        form = AppointmentDocumentForm(instance=appointment)
+    return render(request, 'kredensial/appointment_document.html', {
+        'form': form, 'appointment': appointment,
+    })
+
+
+@login_required
+def appointment_download(request, pk, doc_type):
+    """Download dokumen SPK atau lampiran RKK — cek akses dulu."""
+    appointment = get_object_or_404(ClinicalAppointment, pk=pk)
+    if not user_can(request.user, 'monitor'):
+        return HttpResponseForbidden('Anda tidak memiliki akses ke dokumen ini.')
+    field = 'dokumen_spk' if doc_type == 'spk' else 'lampiran_rkk'
+    file = getattr(appointment, field)
+    if not file:
+        raise Http404('Dokumen belum diunggah.')
+    return FileResponse(file.open('rb'), as_attachment=True,
+                        filename=os.path.basename(file.name))
+
+
+@login_required
+def appointment_print(request, pk):
+    """Print-friendly preview SPK/RKK."""
+    appointment = get_object_or_404(ClinicalAppointment, pk=pk)
+    if not user_can(request.user, 'monitor'):
+        return HttpResponseForbidden('Anda tidak memiliki akses ke dokumen ini.')
+    granted = appointment.granted_privileges.select_related('privilege')
+    return render(request, 'kredensial/appointment_print.html', {
+        'appointment': appointment, 'granted_privileges': granted,
+    })

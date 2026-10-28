@@ -2,6 +2,7 @@
 from django.test import TestCase, Client
 from django.contrib.auth.models import User, Group
 from django.urls import reverse
+from django.core.exceptions import ValidationError
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.utils import timezone
 
@@ -10,9 +11,10 @@ from kredensial.models import (
     CredentialRequirement, CredentialApplication, CredentialDocument,
     DocumentVerification, ClinicalPrivilege, RequestedPrivilege,
     CompetencyAssessment, PrivilegeRecommendation, CredentialReview,
-    GrantedPrivilege,
+    GrantedPrivilege, ClinicalAppointment, CredentialEvent,
 )
 from kredensial.permissions import ROLE_GROUPS, user_can, user_can_transition
+from kredensial.services import appointment as appointment_service
 
 
 def make_group(role):
@@ -246,3 +248,174 @@ class KredensialAssessmentTest(TestCase):
         })
         self.assertEqual(resp.status_code, 302)
         self.assertTrue(ClinicalPrivilege.objects.filter(kode='RAD-02').exists())
+
+
+class KredensialAppointmentTest(TestCase):
+    def setUp(self):
+        self.pejabat = User.objects.create_user(username='pejabat', password='x')
+        make_group('pejabat')
+        self.pejabat.groups.add(Group.objects.get(name=ROLE_GROUPS['pejabat']))
+        self.subkomite = User.objects.create_user(username='subk', password='x')
+        make_group('subkomite')
+        self.subkomite.groups.add(Group.objects.get(name=ROLE_GROUPS['subkomite']))
+
+        self.profesi, _ = Profesi.objects.get_or_create(nama='Fisioterapis')
+        self.nakes = Nakes.objects.create(
+            nama='Dewi Lestari', profesi=self.profesi, unit_kerja='Fisioterapi',
+            no_str='STR-SPK-1', masa_berlaku_str='2027-01-01',
+            no_sip='SIP-SPK-1', masa_berlaku_sip='2027-01-01',
+            created_by=self.pejabat,
+        )
+        self.app = CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-SPK-001', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Fisioterapi',
+            jenis='awal', diajukan_oleh=self.pejabat,
+            workflow_state='PENDING_FINAL_DECISION',
+        )
+        self.privilege = ClinicalPrivilege.objects.create(
+            kode='FIS-01', profesi=self.profesi, nama='Terapi Latihan',
+        )
+        self.rp = RequestedPrivilege.objects.create(
+            application=self.app, privilege=self.privilege,
+        )
+        self.rec = PrivilegeRecommendation.objects.create(
+            requested_privilege=self.rp, keputusan='direkomendasikan',
+            direkomendasikan_oleh=self.subkomite,
+        )
+
+    def _valid_data(self, nomor='SPK-001'):
+        return {
+            'nomor_spk': nomor,
+            'tanggal_terbit': '2026-10-28',
+            'tanggal_mulai_berlaku': '2026-11-01',
+            'tanggal_akhir_berlaku': '2028-10-31',
+            'keputusan': 'disetujui',
+            'lokasi_penugasan': 'Instalasi Fisioterapi',
+        }
+
+    def test_unauthorized_approval_blocked(self):
+        c = Client()
+        c.login(username='subk', password='x')
+        resp = c.get(reverse('kredensial:appointment_create', args=[self.app.pk]))
+        self.assertEqual(resp.status_code, 403)
+
+    def test_finalize_appointment(self):
+        c = Client()
+        c.login(username='pejabat', password='x')
+        data = self._valid_data()
+        data[f'grant_{self.rp.pk}'] = 'on'
+        data[f'redaksi_{self.rp.pk}'] = 'Terapi latihan dasar'
+        resp = c.post(reverse('kredensial:appointment_create', args=[self.app.pk]), data)
+        self.assertEqual(resp.status_code, 302)
+        appt = ClinicalAppointment.objects.get(application=self.app)
+        self.assertTrue(appt.is_final)
+        self.assertEqual(appt.pejabat_berwenang, self.pejabat)
+        self.assertEqual(appt.granted_privileges.count(), 1)
+        granted = appt.granted_privileges.first()
+        self.assertEqual(granted.status, 'active')
+        self.assertEqual(granted.redaksi_final, 'Terapi latihan dasar')
+
+    def test_duplicate_spk_number_rejected(self):
+        appointment_service.finalize_appointment(
+            self.app, self._valid_data('SPK-DUP'),
+            [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+            self.pejabat,
+        )
+        app2 = CredentialApplication.objects.create(
+            nomor_pengajuan='KRED-SPK-002', nakes=self.nakes,
+            profesi_snapshot=self.profesi, unit_kerja_snapshot='Fisioterapi',
+            jenis='awal', diajukan_oleh=self.pejabat,
+            workflow_state='PENDING_FINAL_DECISION',
+        )
+        rp2 = RequestedPrivilege.objects.create(application=app2, privilege=self.privilege)
+        PrivilegeRecommendation.objects.create(
+            requested_privilege=rp2, keputusan='direkomendasikan',
+            direkomendasikan_oleh=self.subkomite,
+        )
+        with self.assertRaises(ValidationError):
+            appointment_service.finalize_appointment(
+                app2, self._valid_data('SPK-DUP'),
+                [{'requested_privilege_id': rp2.pk, 'approved': True}],
+                self.pejabat,
+            )
+
+    def test_invalid_date_range_rejected(self):
+        data = self._valid_data('SPK-BADDATE')
+        data['tanggal_akhir_berlaku'] = '2026-01-01'  # sebelum mulai
+        with self.assertRaises(ValidationError):
+            appointment_service.finalize_appointment(
+                self.app, data,
+                [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+                self.pejabat,
+            )
+
+    def test_duplicate_finalization_blocked(self):
+        appointment_service.finalize_appointment(
+            self.app, self._valid_data('SPK-IDEM'),
+            [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+            self.pejabat,
+        )
+        with self.assertRaises(ValidationError):
+            appointment_service.finalize_appointment(
+                self.app, self._valid_data('SPK-IDEM-2'),
+                [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+                self.pejabat,
+            )
+        self.assertEqual(ClinicalAppointment.objects.filter(application=self.app).count(), 1)
+
+    def test_privilege_without_recommendation_rejected(self):
+        priv2 = ClinicalPrivilege.objects.create(
+            kode='FIS-02', profesi=self.profesi, nama='Terapi Manual',
+        )
+        rp2 = RequestedPrivilege.objects.create(application=self.app, privilege=priv2)
+        with self.assertRaises(ValidationError):
+            appointment_service.finalize_appointment(
+                self.app, self._valid_data('SPK-NOREC'),
+                [{'requested_privilege_id': rp2.pk, 'approved': True}],
+                self.pejabat,
+            )
+
+    def test_granted_status_change_logged(self):
+        appt = appointment_service.finalize_appointment(
+            self.app, self._valid_data('SPK-SUSPEND'),
+            [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+            self.pejabat,
+        )
+        granted = appt.granted_privileges.first()
+        events_before = CredentialEvent.objects.filter(
+            application=self.app, aksi='perubahan_kewenangan',
+        ).count()
+        appointment_service.change_granted_status(
+            granted, 'suspended', self.pejabat, 'Temuan OPPE grade K',
+        )
+        granted.refresh_from_db()
+        self.assertEqual(granted.status, 'suspended')
+        events_after = CredentialEvent.objects.filter(
+            application=self.app, aksi='perubahan_kewenangan',
+        ).count()
+        self.assertEqual(events_after, events_before + 1)
+
+    def test_appointment_detail_and_print(self):
+        appt = appointment_service.finalize_appointment(
+            self.app, self._valid_data('SPK-PRINT'),
+            [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+            self.pejabat,
+        )
+        c = Client()
+        c.login(username='pejabat', password='x')
+        resp = c.get(reverse('kredensial:appointment_detail', args=[self.app.pk]))
+        self.assertEqual(resp.status_code, 200)
+        resp = c.get(reverse('kredensial:appointment_print', args=[self.app.pk]))
+        self.assertEqual(resp.status_code, 200)
+
+    def test_demo_cannot_access_appointment(self):
+        demo = User.objects.create_user(username='demo', password='x')
+        appt = appointment_service.finalize_appointment(
+            self.app, self._valid_data('SPK-DEMO'),
+            [{'requested_privilege_id': self.rp.pk, 'approved': True}],
+            self.pejabat,
+        )
+        c = Client()
+        c.login(username='demo', password='x')
+        resp = c.get(reverse('kredensial:appointment_download', args=[appt.pk, 'spk']))
+        self.assertEqual(resp.status_code, 403)

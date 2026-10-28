@@ -4,7 +4,7 @@
 <div class="page-header-box domain-main">
     <div>
         <h1 class="page-title-text">Rekomendasi Kewenangan</h1>
-        <p class="page-subtitle-text">{{ rp.privilege.nama }} — {{ app.nomor_pengajuan }}</p>
+        <p class="page-subtitle-text">{{ rp.privilege.nama }}, {{ app.nomor_pengajuan }}</p>
     </div>
     <a href="{% url 'kredensial:application_detail' app.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
 </div>
@@ -12,9 +12,9 @@
 <div class="card mb-3">
     <div class="card-body py-2" style="font-size:0.8rem;">
         <div class="mb-1"><span class="text-muted">Kode:</span> {{ rp.privilege.kode }}</div>
-        <div class="mb-1"><span class="text-muted">Ruang Lingkup:</span> {{ rp.privilege.ruang_lingkup|default:"—" }}</div>
-        <div class="mb-1"><span class="text-muted">Kompetensi Wajib:</span> {{ rp.privilege.kompetensi_wajib|default:"—" }}</div>
-        <div class="mb-1"><span class="text-muted">Alasan Permintaan:</span> {{ rp.alasan|default:"—" }}</div>
+        <div class="mb-1"><span class="text-muted">Ruang Lingkup:</span> {{ rp.privilege.ruang_lingkup|default:"-" }}</div>
+        <div class="mb-1"><span class="text-muted">Kompetensi Wajib:</span> {{ rp.privilege.kompetensi_wajib|default:"-" }}</div>
+        <div class="mb-1"><span class="text-muted">Alasan Permintaan:</span> {{ rp.alasan|default:"-" }}</div>
     </div>
 </div>
 

@@ -161,7 +161,7 @@ class CredentialApplication(models.Model):
         blank=True,
         related_name='next_cycles',
         verbose_name='Siklus Sebelumnya',
-        help_text='Diisi untuk rekredensial — referensi ke pengajuan sebelumnya.',
+        help_text='Diisi untuk rekredensial, referensi ke pengajuan sebelumnya.',
     )
     # Timestamps penting
     submitted_at = models.DateTimeField('Waktu Submit', null=True, blank=True)

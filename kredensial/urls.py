@@ -40,4 +40,11 @@ urlpatterns = [
     path('master/kewenangan/', views.privilege_list, name='privilege_list'),
     path('master/kewenangan/tambah/', views.privilege_create, name='privilege_create'),
     path('master/kewenangan/<int:pk>/edit/', views.privilege_update, name='privilege_update'),
+
+    # Penetapan SPK/RKK
+    path('pengajuan/<int:pk>/spk/tetapkan/', views.appointment_create, name='appointment_create'),
+    path('pengajuan/<int:pk>/spk/', views.appointment_detail, name='appointment_detail'),
+    path('spk/<int:pk>/dokumen/', views.appointment_document_upload, name='appointment_document_upload'),
+    path('spk/<int:pk>/unduh/<str:doc_type>/', views.appointment_download, name='appointment_download'),
+    path('spk/<int:pk>/cetak/', views.appointment_print, name='appointment_print'),
 ]

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Penetapan SPK - {{ app.nomor_pengajuan }}{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Penetapan SPK / RKK</h1>
+        <p class="page-subtitle-text">{{ app.nomor_pengajuan }}, {{ app.nakes.nama }}</p>
+    </div>
+    <a href="{% url 'kredensial:application_detail' app.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
+</div>
+
+{% if messages %}
+{% for m in messages %}
+<div class="alert alert-{{ m.tags }} alert-dismissible fade show" role="alert">
+    {{ m }}
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+</div>
+{% endfor %}
+{% endif %}
+
+<form method="post">
+    {% csrf_token %}
+    <div class="row g-3">
+        <!-- DATA KEPUTUSAN -->
+        <div class="col-lg-7">
+            <div class="card mb-3">
+                <div class="card-header bg-white py-2">
+                    <span class="fw-bold" style="font-size:0.85rem;">Data Keputusan</span>
+                </div>
+                <div class="card-body">
+                    <div class="row g-2">
+                        {% for field in form %}
+                        <div class="{% if field.name == 'catatan' %}col-12{% else %}col-md-6{% endif %}">
+                            <label for="{{ field.id_for_label }}" class="form-label fw-bold" style="font-size:0.8rem;">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.errors %}<div class="text-danger" style="font-size:0.72rem;">{{ field.errors|striptags }}</div>{% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% if form.non_field_errors %}
+                    <div class="alert alert-danger mt-2 py-2" style="font-size:0.78rem;">{{ form.non_field_errors|striptags }}</div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- KEWENANGANG YANG DIBERIKAN -->
+        <div class="col-lg-5">
+            <div class="card mb-3">
+                <div class="card-header bg-white py-2">
+                    <span class="fw-bold" style="font-size:0.85rem;">Kewenangan yang Diberikan</span>
+                </div>
+                <div class="card-body py-2">
+                    <p class="text-muted mb-2" style="font-size:0.75rem;">Centang kewenangan yang disetujui. Rekomendasi subkomite tampil sebagai acuan, keputusan final Anda yang berlaku.</p>
+                    {% for rec in recommendations %}
+                    <div class="border rounded p-2 mb-2">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="grant_{{ rec.requested_privilege_id }}" id="grant_{{ rec.requested_privilege_id }}">
+                            <label class="form-check-label fw-bold" for="grant_{{ rec.requested_privilege_id }}" style="font-size:0.82rem;">
+                                {{ rec.requested_privilege.privilege.nama }}
+                            </label>
+                        </div>
+                        <div class="text-muted mb-1" style="font-size:0.72rem;">
+                            Rekomendasi: {{ rec.get_keputusan_display }}
+                            {% if rec.pembatasan %}· Pembatasan: {{ rec.pembatasan|truncatechars:40 }}{% endif %}
+                            {% if rec.kebutuhan_supervisi %}· Supervisi: {{ rec.kebutuhan_supervisi|truncatechars:40 }}{% endif %}
+                        </div>
+                        <input type="text" class="form-control form-control-sm mb-1" name="redaksi_{{ rec.requested_privilege_id }}" placeholder="Redaksi final kewenangan">
+                        <input type="text" class="form-control form-control-sm mb-1" name="pembatasan_{{ rec.requested_privilege_id }}" placeholder="Pembatasan (opsional)" value="{{ rec.pembatasan }}">
+                        <input type="text" class="form-control form-control-sm" name="supervisi_{{ rec.requested_privilege_id }}" placeholder="Kebutuhan supervisi (opsional)" value="{{ rec.kebutuhan_supervisi }}">
+                    </div>
+                    {% empty %}
+                    <p class="text-muted mb-0" style="font-size:0.8rem;">Belum ada rekomendasi kewenangan.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="d-flex gap-2 mb-4">
+        <button type="submit" class="btn btn-primary"><i class="bi bi-check-lg me-1"></i>Finalisasi Keputusan</button>
+        <a href="{% url 'kredensial:application_detail' app.pk %}" class="btn btn-outline-secondary">Batal</a>
+    </div>
+</form>
+{% endblock %}

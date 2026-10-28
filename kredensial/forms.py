@@ -11,7 +11,10 @@ from .models import (
     RequestedPrivilege,
     PrivilegeRecommendation,
     CredentialReview,
+    ClinicalAppointment,
+    CredentialFollowUp,
 )
+from nakes.models import EvaluasiOPPE
 
 
 class CredentialApplicationForm(forms.ModelForm):
@@ -177,3 +180,62 @@ class CredentialReviewForm(forms.ModelForm):
         widgets = {
             'catatan': forms.Textarea(attrs={'rows': 3}),
         }
+
+
+# ==========================================
+# PENETAPAN SPK / RKK
+# ==========================================
+class ClinicalAppointmentForm(forms.ModelForm):
+    class Meta:
+        model = ClinicalAppointment
+        fields = [
+            'nomor_spk', 'tanggal_terbit', 'tanggal_mulai_berlaku',
+            'tanggal_akhir_berlaku', 'keputusan', 'lokasi_penugasan',
+            'tanggal_review', 'target_rekredensial', 'catatan',
+            'nama_pejabat_eksternal',
+        ]
+        widgets = {
+            'tanggal_terbit': forms.DateInput(attrs={'type': 'date'}),
+            'tanggal_mulai_berlaku': forms.DateInput(attrs={'type': 'date'}),
+            'tanggal_akhir_berlaku': forms.DateInput(attrs={'type': 'date'}),
+            'tanggal_review': forms.DateInput(attrs={'type': 'date'}),
+            'target_rekredensial': forms.DateInput(attrs={'type': 'date'}),
+            'catatan': forms.Textarea(attrs={'rows': 3}),
+        }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields['nama_pejabat_eksternal'].required = False
+
+
+class AppointmentDocumentForm(forms.ModelForm):
+    class Meta:
+        model = ClinicalAppointment
+        fields = ['dokumen_spk', 'lampiran_rkk']
+
+
+# ==========================================
+# MONITORING & FOLLOW-UP
+# ==========================================
+class CredentialFollowUpForm(forms.ModelForm):
+    class Meta:
+        model = CredentialFollowUp
+        fields = [
+            'oppe_terkait', 'temuan', 'rekomendasi_tindakan',
+            'penanggung_jawab', 'tanggal_target', 'status',
+            'bukti_penyelesaian', 'tanggal_selesai',
+        ]
+        widgets = {
+            'temuan': forms.Textarea(attrs={'rows': 3}),
+            'rekomendasi_tindakan': forms.Textarea(attrs={'rows': 2}),
+            'bukti_penyelesaian': forms.Textarea(attrs={'rows': 2}),
+            'tanggal_target': forms.DateInput(attrs={'type': 'date'}),
+            'tanggal_selesai': forms.DateInput(attrs={'type': 'date'}),
+        }
+
+    def __init__(self, *args, application=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        if application is not None:
+            self.fields['oppe_terkait'].queryset = EvaluasiOPPE.objects.filter(
+                nakes=application.nakes,
+            )

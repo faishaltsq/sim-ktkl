@@ -68,7 +68,7 @@
                         <td><span class="badge badge-status-neutral">{{ a.get_workflow_state_display }}</span></td>
                         <td style="font-size:0.78rem;color:var(--text-secondary);">{{ a.tanggal_pengajuan|date:"d M Y" }}</td>
                         <td class="text-end">
-                            <a href="{% url 'kredensial:application_detail' a.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-eye"></i></a>
+                            <a href="{% url 'kredensial:application_detail' a.pk %}" class="btn btn-sm btn-outline-primary" title="Lihat detail pengajuan" aria-label="Lihat detail pengajuan"><i class="bi bi-eye"></i></a>
                         </td>
                     </tr>
                     {% empty %}

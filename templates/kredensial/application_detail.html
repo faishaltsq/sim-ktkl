@@ -4,7 +4,7 @@
 <div class="page-header-box domain-main">
     <div>
         <h1 class="page-title-text">{{ app.nomor_pengajuan }}</h1>
-        <p class="page-subtitle-text">{{ app.nakes.nama }} — {{ app.profesi_snapshot.nama }} — {{ app.get_jenis_display }}</p>
+        <p class="page-subtitle-text">{{ app.nakes.nama }}, {{ app.profesi_snapshot.nama }}, {{ app.get_jenis_display }}</p>
     </div>
     <div class="d-flex gap-2 flex-wrap">
         {% if can_create and app.workflow_state == 'DRAFT' or app.workflow_state == 'REVISION_REQUIRED' %}
@@ -19,7 +19,7 @@
 <!-- HORIZONTAL STEPPER -->
 <div class="card mb-3">
     <div class="card-body py-3">
-        <div class="d-flex justify-content-between align-items-center">
+        <div class="stepper-row d-flex justify-content-between align-items-center">
             {% for s in stepper %}
             <div class="text-center flex-fill">
                 <div class="rounded-circle d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;font-size:0.8rem;font-weight:700;{% if s.active %}background:var(--primary);color:#fff;{% else %}background:#E2E8F0;color:var(--text-muted);{% endif %}">{{ s.num }}</div>
@@ -29,6 +29,14 @@
         </div>
     </div>
 </div>
+<style>
+/* Stepper: 10 langkah tidak muat horizontal di layar kecil, jadi jadi scrollable */
+.stepper-row { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+.stepper-row > div { min-width: 64px; }
+@media (max-width: 575.98px) {
+    .stepper-row { justify-content: flex-start !important; gap: 0.25rem; }
+}
+</style>
 
 <div class="row g-3">
     <div class="col-lg-8">
@@ -109,9 +117,9 @@
                             <td class="text-end">
                                 {% for d in documents %}{% if d.requirement_id == req.pk and d.is_versi_aktif %}
                                 <div class="d-flex gap-1 justify-content-end">
-                                    <a href="{% url 'kredensial:document_download' d.pk %}" class="btn btn-sm btn-outline-secondary"><i class="bi bi-download"></i></a>
+                                    <a href="{% url 'kredensial:document_download' d.pk %}" class="btn btn-sm btn-outline-secondary" title="Unduh dokumen" aria-label="Unduh dokumen"><i class="bi bi-download"></i></a>
                                     {% if can_verify %}
-                                    <a href="{% url 'kredensial:document_verify' d.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-clipboard-check"></i></a>
+                                    <a href="{% url 'kredensial:document_verify' d.pk %}" class="btn btn-sm btn-outline-primary" title="Verifikasi dokumen" aria-label="Verifikasi dokumen"><i class="bi bi-clipboard-check"></i></a>
                                     {% endif %}
                                 </div>
                                 {% endif %}{% endfor %}
@@ -200,11 +208,11 @@
                                 {% if rec %}<span class="badge badge-status-{% if rec.keputusan == 'direkomendasikan' %}success{% elif rec.keputusan == 'tidak' %}danger{% else %}warning{% endif %}">{{ rec.get_keputusan_display }}</span>
                                 {% else %}<span class="text-muted" style="font-size:0.78rem;">Belum ada</span>{% endif %}
                             </td>
-                            <td style="font-size:0.78rem;">{% if rec %}{{ rec.pembatasan|default:"—"|truncatechars:40 }}{% endif %}</td>
-                            <td style="font-size:0.78rem;">{% if rec %}{{ rec.kebutuhan_supervisi|default:"—"|truncatechars:40 }}{% endif %}</td>
+                            <td style="font-size:0.78rem;">{% if rec %}{{ rec.pembatasan|default:"-"|truncatechars:40 }}{% endif %}</td>
+                            <td style="font-size:0.78rem;">{% if rec %}{{ rec.kebutuhan_supervisi|default:"-"|truncatechars:40 }}{% endif %}</td>
                             <td class="text-end">
                                 {% if can_recommend %}
-                                <a href="{% url 'kredensial:recommendation_edit' rp.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                                <a href="{% url 'kredensial:recommendation_edit' rp.pk %}" class="btn btn-sm btn-outline-primary" title="Edit rekomendasi" aria-label="Edit rekomendasi"><i class="bi bi-pencil"></i></a>
                                 {% endif %}
                             </td>
                         </tr>
@@ -223,14 +231,17 @@
         <div class="card mb-3">
             <div class="card-header bg-white py-2 d-flex justify-content-between align-items-center">
                 <span class="fw-bold" style="font-size:0.85rem;">SPK: {{ appointment.nomor_spk }}</span>
-                <span class="badge badge-status-{% if appointment.keputusan == 'disetujui' %}success{% elif appointment.keputusan == 'ditolak' %}danger{% else %}warning{% endif %}">{{ appointment.get_keputusan_display }}</span>
+                <div class="d-flex gap-1">
+                    <a href="{% url 'kredensial:appointment_detail' app.pk %}" class="btn btn-sm btn-outline-primary" title="Lihat detail SPK" aria-label="Lihat detail SPK"><i class="bi bi-eye"></i></a>
+                    <a href="{% url 'kredensial:appointment_print' app.pk %}" class="btn btn-sm btn-outline-secondary" target="_blank" title="Cetak SPK" aria-label="Cetak SPK"><i class="bi bi-printer"></i></a>
+                </div>
             </div>
             <div class="card-body py-2" style="font-size:0.8rem;">
                 <div class="row g-2">
                     <div class="col-6 col-md-3"><div class="text-muted" style="font-size:0.72rem;">Terbit</div>{{ appointment.tanggal_terbit|date:"d M Y" }}</div>
-                    <div class="col-6 col-md-3"><div class="text-muted" style="font-size:0.72rem;">Berlaku</div>{{ appointment.tanggal_mulai_berlaku|date:"d M Y" }} — {{ appointment.tanggal_akhir_berlaku|date:"d M Y" }}</div>
+                    <div class="col-6 col-md-3"><div class="text-muted" style="font-size:0.72rem;">Berlaku</div>{{ appointment.tanggal_mulai_berlaku|date:"d M Y" }} s/d {{ appointment.tanggal_akhir_berlaku|date:"d M Y" }}</div>
                     <div class="col-6 col-md-3"><div class="text-muted" style="font-size:0.72rem;">Pejabat</div>{{ appointment.pejabat_berwenang|default:appointment.nama_pejabat_eksternal }}</div>
-                    <div class="col-6 col-md-3"><div class="text-muted" style="font-size:0.72rem;">Lokasi</div>{{ appointment.lokasi_penugasan|default:"—" }}</div>
+                    <div class="col-6 col-md-3"><div class="text-muted" style="font-size:0.72rem;">Lokasi</div>{{ appointment.lokasi_penugasan|default:"-" }}</div>
                 </div>
                 {% if granted_privileges %}
                 <div class="mt-2">
@@ -240,6 +251,13 @@
                     {% endfor %}
                 </div>
                 {% endif %}
+            </div>
+        </div>
+        {% elif can_approve %}
+        <div class="card mb-3">
+            <div class="card-body text-center py-3">
+                <p class="text-muted mb-2" style="font-size:0.82rem;">Pengajuan ini belum memiliki penetapan SPK.</p>
+                <a href="{% url 'kredensial:appointment_create' app.pk %}" class="btn btn-sm btn-primary"><i class="bi bi-file-earmark-check me-1"></i>Tetapkan SPK/RKK</a>
             </div>
         </div>
         {% endif %}
@@ -257,7 +275,7 @@
                 <div class="mb-1"><span class="text-muted">Unit:</span> {{ app.unit_kerja_snapshot }}</div>
                 <div class="mb-1"><span class="text-muted">STR:</span> {{ app.nakes.no_str }} (s/d {{ app.nakes.masa_berlaku_str|date:"d M Y" }})</div>
                 <div class="mb-1"><span class="text-muted">SIP:</span> {{ app.nakes.no_sip }} (s/d {{ app.nakes.masa_berlaku_sip|date:"d M Y" }})</div>
-                <div class="mb-1"><span class="text-muted">Verifikator:</span> {{ app.verifikator|default:"—" }}</div>
+                <div class="mb-1"><span class="text-muted">Verifikator:</span> {{ app.verifikator|default:"-" }}</div>
                 <div class="mb-1"><span class="text-muted">Versi Kebijakan:</span> {{ app.versi_kebijakan }}</div>
                 {% if app.previous_cycle %}
                 <div class="mb-1"><span class="text-muted">Siklus Sebelumnya:</span> <a href="{% url 'kredensial:application_detail' app.previous_cycle_id %}">{{ app.previous_cycle.nomor_pengajuan }}</a></div>
@@ -291,7 +309,7 @@
                 {% for e in events %}
                 <div class="d-flex mb-2">
                     <div class="flex-shrink-0" style="width:8px;">
-                        <div style="width:8px;height:8px;border-radius:50%;background:var(--primary);margin-top:6px;"></div>
+                        <div style="width:8px;height:8px;border-radius:50%;margin-top:6px;background:{% if e.aksi == 'create' %}var(--success){% elif e.aksi == 'finalisasi_spk' or e.aksi == 'perubahan_kewenangan' %}var(--warning){% else %}var(--primary){% endif %};" title="{{ e.aksi }}"></div>
                     </div>
                     <div class="flex-grow-1 ms-2">
                         <div style="font-size:0.78rem;font-weight:600;">

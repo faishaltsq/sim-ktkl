@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Unggah Dokumen SPK - VIRA NAKES{% endblock %}
+{% block content %}
+<div class="page-header-box domain-main">
+    <div>
+        <h1 class="page-title-text">Unggah Dokumen SPK/RKK</h1>
+        <p class="page-subtitle-text">SPK {{ appointment.nomor_spk }}</p>
+    </div>
+    <a href="{% url 'kredensial:appointment_detail' appointment.application_id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="alert alert-info py-2" style="font-size:0.8rem;">
+            <i class="bi bi-info-circle me-1"></i>
+            Unggah dokumen resmi yang telah ditandatangani. Sistem tidak membuat tanda tangan elektronik, keaslian dokumen menjadi tanggung jawab penerbit.
+        </div>
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="mb-3">
+                <label for="{{ field.id_for_label }}" class="form-label fw-bold" style="font-size:0.82rem;">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}<div class="text-danger" style="font-size:0.75rem;">{{ field.errors|striptags }}</div>{% endif %}
+            </div>
+            {% endfor %}
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-primary"><i class="bi bi-upload me-1"></i>Unggah</button>
+                <a href="{% url 'kredensial:appointment_detail' appointment.application_id %}" class="btn btn-outline-secondary">Batal</a>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}

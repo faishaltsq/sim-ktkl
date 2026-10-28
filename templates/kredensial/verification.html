@@ -4,7 +4,7 @@
 <div class="page-header-box domain-main">
     <div>
         <h1 class="page-title-text">Verifikasi Dokumen</h1>
-        <p class="page-subtitle-text">{{ doc.requirement.nama_syarat }} — {{ doc.application.nomor_pengajuan }}</p>
+        <p class="page-subtitle-text">{{ doc.requirement.nama_syarat }}, {{ doc.application.nomor_pengajuan }}</p>
     </div>
     <a href="{% url 'kredensial:application_detail' doc.application_id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
 </div>
@@ -40,8 +40,8 @@
                 <div class="mb-1"><span class="text-muted">Syarat:</span> {{ doc.requirement.nama_syarat }}</div>
                 <div class="mb-1"><span class="text-muted">Kategori:</span> {{ doc.requirement.get_kategori_display }}</div>
                 <div class="mb-1"><span class="text-muted">Versi:</span> v{{ doc.versi }}</div>
-                <div class="mb-1"><span class="text-muted">Nomor Dokumen:</span> {{ doc.nomor_dokumen|default:"—" }}</div>
-                <div class="mb-1"><span class="text-muted">Berlaku:</span> {{ doc.tanggal_berlaku|date:"d M Y"|default:"—" }} — {{ doc.tanggal_kedaluwarsa|date:"d M Y"|default:"—" }}</div>
+                <div class="mb-1"><span class="text-muted">Nomor Dokumen:</span> {{ doc.nomor_dokumen|default:"-" }}</div>
+                <div class="mb-1"><span class="text-muted">Berlaku:</span> {{ doc.tanggal_berlaku|date:"d M Y"|default:"-" }}, {{ doc.tanggal_kedaluwarsa|date:"d M Y"|default:"-" }}</div>
                 <div class="mb-1"><span class="text-muted">Ukuran:</span> {{ doc.file_size_display }}</div>
                 <a href="{% url 'kredensial:document_download' doc.pk %}" class="btn btn-sm btn-outline-primary mt-1"><i class="bi bi-download me-1"></i>Unduh Berkas</a>
             </div>
@@ -58,7 +58,7 @@
                         <span class="badge badge-status-{% if v.hasil == 'valid' %}success{% elif v.hasil == 'perbaikan' %}warning{% elif v.hasil == 'ditolak' %}danger{% else %}neutral{% endif %}">{{ v.get_hasil_display }}</span>
                         <span class="text-muted" style="font-size:0.72rem;">{{ v.tanggal_verifikasi|date:"d M Y H:i" }}</span>
                     </div>
-                    <div style="font-size:0.78rem;">{{ v.diverifikasi_oleh|default:"—" }}</div>
+                    <div style="font-size:0.78rem;">{{ v.diverifikasi_oleh|default:"-" }}</div>
                     {% if v.catatan %}<div class="text-muted" style="font-size:0.75rem;">{{ v.catatan }}</div>{% endif %}
                     {% if v.koreksi_diperlukan %}<div class="text-danger" style="font-size:0.75rem;">Koreksi: {{ v.koreksi_diperlukan }}</div>{% endif %}
                 </li>

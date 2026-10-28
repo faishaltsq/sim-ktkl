@@ -42,15 +42,15 @@
                     <td><code style="font-size:0.75rem;">{{ p.kode }}</code></td>
                     <td><span class="badge badge-status-info">{{ p.profesi.nama }}</span></td>
                     <td style="font-size:0.82rem;font-weight:600;">{{ p.nama }}</td>
-                    <td style="font-size:0.78rem;color:var(--text-secondary);">{{ p.ruang_lingkup|default:"—"|truncatechars:50 }}</td>
-                    <td style="font-size:0.78rem;color:var(--text-secondary);">{{ p.aturan_supervisi|default:"—"|truncatechars:40 }}</td>
+                    <td style="font-size:0.78rem;color:var(--text-secondary);">{{ p.ruang_lingkup|default:"-"|truncatechars:50 }}</td>
+                    <td style="font-size:0.78rem;color:var(--text-secondary);">{{ p.aturan_supervisi|default:"-"|truncatechars:40 }}</td>
                     <td>{% if p.aktif %}<span class="badge badge-status-success">Aktif</span>{% else %}<span class="badge badge-status-neutral">Nonaktif</span>{% endif %}</td>
                     <td class="text-end">
-                        <a href="{% url 'kredensial:privilege_update' p.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'kredensial:privilege_update' p.pk %}" class="btn btn-sm btn-outline-primary" title="Edit kewenangan" aria-label="Edit kewenangan"><i class="bi bi-pencil"></i></a>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="7" class="text-center text-muted py-4">Belum ada katalog kewenangan.</td></tr>
+                <tr><td colspan="7" class="text-center text-muted py-4">Belum ada katalog kewenangan. <a href="{% url 'kredensial:privilege_create' %}">Tambah kewenangan pertama</a> untuk mulai menyusun katalog.</td></tr>
                 {% endfor %}
             </tbody>
         </table>

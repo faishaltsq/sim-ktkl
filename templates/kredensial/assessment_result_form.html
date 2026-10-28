@@ -4,7 +4,7 @@
 <div class="page-header-box domain-main">
     <div>
         <h1 class="page-title-text">Tambah Hasil Asesmen</h1>
-        <p class="page-subtitle-text">{{ assessment.get_metode_display }} — {{ assessment.application.nomor_pengajuan }}</p>
+        <p class="page-subtitle-text">{{ assessment.get_metode_display }}, {{ assessment.application.nomor_pengajuan }}</p>
     </div>
     <a href="{% url 'kredensial:application_detail' assessment.application_id %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-arrow-left me-1"></i>Kembali</a>
 </div>

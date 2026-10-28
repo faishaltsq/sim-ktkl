@@ -3,7 +3,7 @@
 {% block content %}
 <div class="page-header-box domain-main">
     <div>
-        <h1 class="page-title-text">Master Kewenangan — Syarat Dokumen</h1>
+        <h1 class="page-title-text">Master Kewenangan, Syarat Dokumen</h1>
         <p class="page-subtitle-text">Konfigurasi syarat dokumen kredensial per profesi.</p>
     </div>
     <a href="{% url 'kredensial:requirement_create' %}" class="btn btn-sm btn-primary"><i class="bi bi-plus-lg me-1"></i>Tambah Syarat</a>
@@ -44,15 +44,15 @@
                     <td style="font-size:0.8rem;">{{ r.get_kategori_display }}</td>
                     <td style="font-size:0.82rem;font-weight:600;">{{ r.nama_syarat }}</td>
                     <td>{% if r.wajib %}<span class="badge badge-status-danger">Wajib</span>{% else %}<span class="badge badge-status-neutral">Opsional</span>{% endif %}</td>
-                    <td style="font-size:0.78rem;">{% if r.masa_berlaku_hari %}{{ r.masa_berlaku_hari }} hari{% else %}—{% endif %}</td>
-                    <td style="font-size:0.75rem;color:var(--text-secondary);">{{ r.referensi_regulasi|default:"—"|truncatechars:30 }}</td>
+                    <td style="font-size:0.78rem;">{% if r.masa_berlaku_hari %}{{ r.masa_berlaku_hari }} hari{% else %}-{% endif %}</td>
+                    <td style="font-size:0.75rem;color:var(--text-secondary);">{{ r.referensi_regulasi|default:"-"|truncatechars:30 }}</td>
                     <td>{% if r.aktif %}<span class="badge badge-status-success">Aktif</span>{% else %}<span class="badge badge-status-neutral">Nonaktif</span>{% endif %}</td>
                     <td class="text-end">
-                        <a href="{% url 'kredensial:requirement_update' r.pk %}" class="btn btn-sm btn-outline-primary"><i class="bi bi-pencil"></i></a>
+                        <a href="{% url 'kredensial:requirement_update' r.pk %}" class="btn btn-sm btn-outline-primary" title="Edit syarat" aria-label="Edit syarat"><i class="bi bi-pencil"></i></a>
                     </td>
                 </tr>
                 {% empty %}
-                <tr><td colspan="8" class="text-center text-muted py-4">Belum ada syarat yang dikonfigurasi.</td></tr>
+                <tr><td colspan="8" class="text-center text-muted py-4">Belum ada syarat yang dikonfigurasi. <a href="{% url 'kredensial:requirement_create' %}">Tambah syarat dokumen</a> untuk menentukan berkas yang wajib diunggah.</td></tr>
                 {% endfor %}
             </tbody>
         </table>
