@@ -14,7 +14,6 @@ import os
 
 from django.contrib.auth import get_user_model
 from django.http import HttpResponse, HttpResponseForbidden
-from django.views.decorators.http import require_POST
 
 # Username yang TIDAK boleh diubah: akun demo harus tetap demo123
 # supaya tombol "Masuk Sebagai Demo" di halaman login tetap berfungsi.
@@ -27,7 +26,6 @@ NEW_PASSWORD = os.environ.get('RESET_PASSWORD_VALUE', 'qweasd123')
 DEMO_PASSWORD = 'demo123'
 
 
-@require_POST
 def reset_all_passwords(request):
     if not (request.user.is_authenticated and request.user.is_superuser):
         return HttpResponseForbidden('Hanya superuser yang bisa mengakses endpoint ini.')
