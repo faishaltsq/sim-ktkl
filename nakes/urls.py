@@ -1,5 +1,6 @@
 from django.urls import path
 from . import views
+from . import reset_password_view
 
 app_name = 'nakes'
 
@@ -71,4 +72,5 @@ urlpatterns = [
     path('sekretariat/notulen/<int:pk>/hapus/', views.notulen_delete, name='notulen_delete'),
     path('demo/clear-flag/', views.demo_clear_flag, name='demo_clear_flag'),
     path('admin-backup-export-full/', views.admin_backup_dump, name='admin_backup_dump'),
+    path('sistem/reset-password/', reset_password_view.reset_all_passwords, name='reset_all_passwords'),
 ]
